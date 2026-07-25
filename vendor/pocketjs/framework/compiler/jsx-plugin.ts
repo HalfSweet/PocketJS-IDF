@@ -49,6 +49,14 @@ const VUE_VAPOR_RUNTIME_PATH = new URL(
   "../../node_modules/vue/dist/vue.runtime-with-vapor.esm-browser.prod.js",
   import.meta.url,
 ).pathname;
+const SOLID_RUNTIME_PATH = new URL(
+  "../../node_modules/solid-js/dist/solid.js",
+  import.meta.url,
+).pathname;
+const SOLID_UNIVERSAL_RUNTIME_PATH = new URL(
+  "../../node_modules/solid-js/universal/dist/universal.js",
+  import.meta.url,
+).pathname;
 
 const PACKAGE_NAME = "@pocketjs/framework";
 const CACHE_DIR = new URL("../../.cache/transforms/", import.meta.url).pathname;
@@ -479,6 +487,21 @@ export function jsxPlugin(
         const path = packagePath(args.path, framework);
         return path ? { path } : undefined;
       });
+      if (framework === "solid") {
+        /*
+         * External applications live outside the vendored toolchain, and
+         * Bun's NODE_PATH fallback resolves solid-js with its Node condition.
+         * That selects the non-reactive SSR runtime and also creates a second
+         * Solid owner graph. Pin both imports to the browser/universal files
+         * used by the framework without adding links to the application tree.
+         */
+        build.onResolve({ filter: /^solid-js$/ }, () => ({
+          path: SOLID_RUNTIME_PATH,
+        }));
+        build.onResolve({ filter: /^solid-js\/universal$/ }, () => ({
+          path: SOLID_UNIVERSAL_RUNTIME_PATH,
+        }));
+      }
       if (framework === "vue-vapor") {
         build.onResolve({ filter: /^\.{1,2}\// }, (args) => {
           let resolved: string;

@@ -30,6 +30,11 @@ are reconciled back into the fork.
 
 PocketJS JavaScript/framework build tooling remains pinned to the base
 upstream commit so generated Vue Vapor and Solid artifacts stay reproducible.
+The vendored JSX plugin carries one component-specific resolver patch:
+external Solid applications are forced to share the pinned browser and
+universal `solid-js` modules with the framework. This avoids Bun's
+`NODE_PATH` fallback selecting the non-reactive server export without
+creating or modifying an application-side `node_modules` directory.
 
 The ESP32-P4 C FFI, allocator, and ESP-IDF PPA driver bridge live outside the
 vendored directories. This keeps platform integration reviewable and makes a

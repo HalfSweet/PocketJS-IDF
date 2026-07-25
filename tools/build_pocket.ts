@@ -308,6 +308,33 @@ function normalizeBundlePaths(bundle: Uint8Array): Uint8Array {
   return new TextEncoder().encode(normalized);
 }
 
+function verifyJavascriptBundle(
+  bundle: Uint8Array,
+  framework: PocketManifestV2["app"]["framework"],
+): void {
+  if (framework !== "solid") return;
+
+  const source = new TextDecoder().decode(bundle).replaceAll("\\", "/");
+  if (
+    source.includes("/solid-js/dist/server.js") ||
+    source.includes("/solid-js/dist/dev.js")
+  ) {
+    fail(
+      "Solid bundle selected a server/development runtime; " +
+        "the browser runtime must be shared by the app and PocketJS framework",
+    );
+  }
+
+  const browserRuntimeCount =
+    source.match(/\/solid-js\/dist\/solid\.js/g)?.length ?? 0;
+  if (browserRuntimeCount !== 1) {
+    fail(
+      "Solid bundle must contain exactly one shared browser runtime " +
+        `(found ${browserRuntimeCount})`,
+    );
+  }
+}
+
 async function main(): Promise<void> {
   const options = parseOptions(process.argv.slice(2));
   if (!existsSync(options.manifest)) {
@@ -389,9 +416,11 @@ async function main(): Promise<void> {
   if (!existsSync(javascriptPath) || !existsSync(pakPath)) {
     fail("PocketJS compiler did not produce the planned JavaScript and PAK outputs");
   }
-  const javascript = normalizeBundlePaths(
-    new Uint8Array(await Bun.file(javascriptPath).arrayBuffer()),
+  const rawJavascript = new Uint8Array(
+    await Bun.file(javascriptPath).arrayBuffer(),
   );
+  verifyJavascriptBundle(rawJavascript, plan.app.framework);
+  const javascript = normalizeBundlePaths(rawJavascript);
   const terminatedJavascript = new Uint8Array(javascript.length + 1);
   terminatedJavascript.set(javascript);
   const pak = new Uint8Array(await Bun.file(pakPath).arrayBuffer());
