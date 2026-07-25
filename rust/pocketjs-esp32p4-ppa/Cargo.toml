@@ -1,0 +1,13 @@
+[package]
+name = "pocketjs-esp32p4-ppa"
+version = "0.1.0"
+edition = "2021"
+license = "MIT"
+publish = false
+
+[dependencies]
+pocketjs-core = { path = "../pocketjs-core" }
+
+[features]
+default = []
+std = ["pocketjs-core/std"]

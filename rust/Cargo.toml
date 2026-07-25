@@ -1,0 +1,21 @@
+[package]
+name = "pocketjs-esp32-core"
+version = "0.1.0"
+edition = "2021"
+license = "MIT"
+publish = false
+
+[lib]
+name = "pocketjs_esp32_core"
+crate-type = ["staticlib"]
+
+[dependencies]
+pocketjs-core = { path = "pocketjs-core" }
+pocketjs-esp32p4-ppa = { path = "pocketjs-esp32p4-ppa" }
+
+[profile.release]
+codegen-units = 1
+lto = "thin"
+opt-level = 3
+panic = "abort"
+strip = "debuginfo"
