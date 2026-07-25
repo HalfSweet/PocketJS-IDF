@@ -1,0 +1,131 @@
+name: CI
+
+on:
+  pull_request:
+  push:
+    branches:
+      - main
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ci-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+env:
+  CARGO_TERM_COLOR: always
+
+jobs:
+  quality:
+    name: Rust, packages, and component archive
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out the component
+        uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+
+      - name: Cache Rust and Bun dependencies
+        uses: actions/cache@0057852bfaa89a56745cba8c7296529d2fc39830 # v4
+        with:
+          path: |
+            ~/.cargo/git
+            ~/.cargo/registry
+            ~/.bun/install/cache
+            rust/target
+            vendor/pocketjs/node_modules
+          key: quality-${{ runner.os }}-${{ hashFiles('rust/Cargo.lock', 'vendor/pocketjs/bun.lock') }}
+
+      - name: Install pinned Rust toolchain
+        run: |
+          rustup toolchain install 1.89.0 --profile minimal
+          rustup default 1.89.0
+          rustup component add rustfmt
+
+      - name: Install pinned Bun toolchain
+        uses: oven-sh/setup-bun@0c5077e51419868618aeaa5fe8019c62421857d6 # v2
+        with:
+          bun-version: 1.3.14
+
+      - name: Install PocketJS compiler dependencies
+        run: bun install --cwd vendor/pocketjs --frozen-lockfile
+
+      - name: Check maintained Rust formatting
+        run: >-
+          cargo fmt
+          --manifest-path rust/Cargo.toml
+          --package pocketjs-esp32-core
+          --package pocketjs-esp32p4-ppa
+          -- --check
+
+      - name: Test the Rust workspace
+        run: cargo test --manifest-path rust/Cargo.toml --workspace --locked
+
+      - name: Test the Pocket encoder and embed validator
+        run: |
+          bun test tests/pocket_package.test.ts
+          python -m unittest discover -s tests -p 'test_*.py'
+
+      - name: Verify deterministic Pocket compilation
+        run: tools/check_determinism.sh
+
+      - name: Install Component Manager
+        run: >-
+          python -m pip install
+          --disable-pip-version-check
+          idf-component-manager==3.0.3
+
+      - name: Lint, pack, and audit the RC component
+        run: |
+          pack_dir="$RUNNER_TEMP/pocketjs-component-pack"
+          mkdir -p "$pack_dir"
+          compote -W component pack \
+            --name pocketjs-idf \
+            --version 0.1.0-rc.1 \
+            --dest-dir "$pack_dir"
+          tar -tzf "$pack_dir/pocketjs-idf_0.1.0-rc.1.tgz" \
+            >"$pack_dir/archive.list"
+          if grep -E \
+            '^\./(\.git/|\.github/|\.ci/|AGENTS\.md$|.*node_modules/|.*target/)' \
+            "$pack_dir/archive.list"; then
+            echo "component archive contains a forbidden local artifact" >&2
+            exit 1
+          fi
+
+  idf:
+    name: ESP-IDF ${{ matrix.idf }} / ${{ matrix.mode }}
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - idf: v5.4.4
+            mode: prebuilt
+          - idf: v6.0.2
+            mode: prebuilt
+          - idf: v6.0.2
+            mode: source
+          - idf: v6.0.2
+            mode: archive
+    steps:
+      - name: Check out the component
+        uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+
+      - name: Cache CI toolchains
+        uses: actions/cache@0057852bfaa89a56745cba8c7296529d2fc39830 # v4
+        with:
+          path: |
+            .ci/cargo
+            .ci/rustup
+            .ci/bun
+            .ci/ccache
+            vendor/pocketjs/node_modules
+          key: idf-${{ matrix.idf }}-${{ matrix.mode }}-${{ hashFiles('rust/Cargo.lock', 'vendor/pocketjs/bun.lock') }}
+
+      - name: Build the consumer
+        uses: espressif/esp-idf-ci-action@e6f5c74232b1ccd4c97ed641f1e48553853f1fd5 # v1.2.0
+        with:
+          esp_idf_version: ${{ matrix.idf }}
+          target: esp32p4
+          extra_docker_args: >-
+            -e CCACHE_DIR=/app/${{ github.repository }}/.ci/ccache
+          command: bash tools/ci_idf_build.sh ${{ matrix.mode }}
