@@ -17,7 +17,7 @@ void app_main(void)
     ESP_ERROR_CHECK(pocketjs_run_frame(runtime, NULL, &stats));
     ESP_LOGI(
         "pocketjs_example",
-        "prebuilt package frame: js=%u us, core=%u us, total=%u us",
+        "headless frame: js=%u us, core=%u us, total=%u us",
         (unsigned)stats.javascript_us,
         (unsigned)stats.core_tick_us,
         (unsigned)stats.total_us

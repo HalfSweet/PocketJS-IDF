@@ -4,8 +4,8 @@ idf_component_register(
     REQUIRES PocketJS-IDF
 )
 
-pocketjs_embed_package(
+pocketjs_compile_app(
     TARGET ${COMPONENT_LIB}
     NAME hello
-    PACKAGE "app/hello.pocket"
+    MANIFEST "app/pocket.json"
 )
