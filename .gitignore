@@ -1,0 +1,12 @@
+build/
+build-*/
+managed_components/
+dependencies.lock
+sdkconfig
+sdkconfig.old
+node_modules/
+target/
+dist/
+.cache/
+.DS_Store
+

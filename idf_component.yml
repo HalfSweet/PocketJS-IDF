@@ -1,0 +1,28 @@
+description: PocketJS runtime and RGB565 framebuffer manager for ESP32-P4
+url: https://github.com/HalfSweet/PocketJS-IDF
+repository: https://github.com/HalfSweet/PocketJS-IDF.git
+issues: https://github.com/HalfSweet/PocketJS-IDF/issues
+license: MIT
+tags:
+  - pocketjs
+  - javascript
+  - quickjs
+  - display
+  - esp32p4
+targets:
+  - esp32p4
+dependencies:
+  idf: ">=5.4"
+  espressif/quickjs-ng: "0.14.0"
+files:
+  exclude:
+    - "build*"
+    - "managed_components"
+    - "dependencies.lock"
+    - "sdkconfig*"
+    - "node_modules"
+    - "target"
+    - "dist"
+    - ".cache"
+    - "tests/output"
+
