@@ -15,14 +15,14 @@ dependencies:
   idf: ">=5.4"
   espressif/quickjs-ng: "0.14.0"
 files:
+  use_gitignore: true
   exclude:
-    - "build*"
-    - "managed_components"
-    - "dependencies.lock"
-    - "sdkconfig*"
-    - "node_modules"
-    - "target"
-    - "dist"
-    - ".cache"
-    - "tests/output"
-
+    - "**/build*/**/*"
+    - "**/managed_components/**/*"
+    - "**/dependencies.lock"
+    - "**/sdkconfig*"
+    - "**/node_modules/**/*"
+    - "**/target/**/*"
+    - "**/dist/**/*"
+    - "**/.cache/**/*"
+    - "tests/output/**/*"

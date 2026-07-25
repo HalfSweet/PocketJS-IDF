@@ -8,5 +8,6 @@ node_modules/
 target/
 dist/
 .cache/
+__pycache__/
+tests/output/
 .DS_Store
-
