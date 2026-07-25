@@ -325,6 +325,18 @@ async function main(): Promise<void> {
 
   syncToolchain(vendorRoot, workRoot);
   linkDependencies(sourceModules, join(workRoot, "node_modules"));
+  /*
+   * Upstream pass 1 walks framework imports before it generates this module.
+   * Bun on case-sensitive Linux caches that first failed relative resolution,
+   * so a completely fresh build can still miss the file during pass 2. Seed
+   * an empty table in the build-local toolchain; build.ts overwrites it with
+   * the compiled style IDs before bundling. This never modifies component
+   * source and also removes stale generated state between rebuilds.
+   */
+  await Bun.write(
+    join(workRoot, "framework", "src", "styles.generated.ts"),
+    "export const STYLE_IDS: Record<string, number> = {};\n",
+  );
 
   const manifestBytes = new Uint8Array(
     await Bun.file(options.manifest).arrayBuffer(),
