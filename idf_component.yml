@@ -17,6 +17,9 @@ dependencies:
 files:
   use_gitignore: true
   exclude:
+    - ".git/**/*"
+    - ".github/**/*"
+    - "AGENTS.md"
     - "**/build*/**/*"
     - "**/managed_components/**/*"
     - "**/dependencies.lock"
