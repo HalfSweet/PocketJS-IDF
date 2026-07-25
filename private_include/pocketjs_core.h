@@ -9,6 +9,8 @@ extern "C" {
 
 #define POCKETJS_MAX_DAMAGE_REGIONS 8U
 
+typedef struct pocketjs_core pocketjs_core_t;
+
 enum {
     POCKETJS_ROOT_ID = 1,
 };
@@ -53,18 +55,51 @@ enum pocketjs_prop {
     POCKETJS_PROP_ROTATE = 131,
 };
 
-int pocketjs_core_init(uint32_t width, uint32_t height, uint32_t raster_density);
-void pocketjs_core_reset(void);
+pocketjs_core_t *pocketjs_core_create(
+    uint32_t width,
+    uint32_t height,
+    uint32_t raster_density
+);
+void pocketjs_core_destroy(pocketjs_core_t *core);
 
-int32_t pocketjs_core_create_node(uint32_t node_type);
-void pocketjs_core_destroy_node(int32_t id);
-void pocketjs_core_insert_before(int32_t parent, int32_t child, int32_t anchor);
-void pocketjs_core_remove_child(int32_t parent, int32_t child);
-void pocketjs_core_set_style(int32_t id, int32_t style_id);
-void pocketjs_core_set_prop(int32_t id, uint32_t prop, double value);
-int pocketjs_core_set_text(int32_t id, const uint8_t *text, size_t len);
-int pocketjs_core_replace_text(int32_t id, const uint8_t *text, size_t len);
+int32_t pocketjs_core_create_node(pocketjs_core_t *core, uint32_t node_type);
+void pocketjs_core_destroy_node(pocketjs_core_t *core, int32_t id);
+void pocketjs_core_insert_before(
+    pocketjs_core_t *core,
+    int32_t parent,
+    int32_t child,
+    int32_t anchor
+);
+void pocketjs_core_remove_child(
+    pocketjs_core_t *core,
+    int32_t parent,
+    int32_t child
+);
+void pocketjs_core_set_style(
+    pocketjs_core_t *core,
+    int32_t id,
+    int32_t style_id
+);
+void pocketjs_core_set_prop(
+    pocketjs_core_t *core,
+    int32_t id,
+    uint32_t prop,
+    double value
+);
+int pocketjs_core_set_text(
+    pocketjs_core_t *core,
+    int32_t id,
+    const uint8_t *text,
+    size_t len
+);
+int pocketjs_core_replace_text(
+    pocketjs_core_t *core,
+    int32_t id,
+    const uint8_t *text,
+    size_t len
+);
 int32_t pocketjs_core_animate(
+    pocketjs_core_t *core,
     int32_t id,
     uint32_t prop,
     double to,
@@ -72,22 +107,43 @@ int32_t pocketjs_core_animate(
     uint32_t easing,
     uint32_t delay_ms
 );
-void pocketjs_core_cancel_animation(int32_t animation_id);
-void pocketjs_core_set_focus(int32_t id);
-void pocketjs_core_set_active(int32_t id, int active);
-int32_t pocketjs_core_hit_test(float x, float y);
+void pocketjs_core_cancel_animation(
+    pocketjs_core_t *core,
+    int32_t animation_id
+);
+void pocketjs_core_set_focus(pocketjs_core_t *core, int32_t id);
+void pocketjs_core_set_active(
+    pocketjs_core_t *core,
+    int32_t id,
+    int active
+);
+int32_t pocketjs_core_hit_test(pocketjs_core_t *core, float x, float y);
 
-int pocketjs_core_load_styles(const uint8_t *data, size_t len);
-int pocketjs_core_load_font_atlas(const uint8_t *data, size_t len);
+int pocketjs_core_load_styles(
+    pocketjs_core_t *core,
+    const uint8_t *data,
+    size_t len
+);
+int pocketjs_core_load_font_atlas(
+    pocketjs_core_t *core,
+    const uint8_t *data,
+    size_t len
+);
 int32_t pocketjs_core_upload_texture(
+    pocketjs_core_t *core,
     const uint8_t *data,
     size_t len,
     uint32_t width,
     uint32_t height,
     uint32_t psm
 );
-void pocketjs_core_set_image(int32_t id, int32_t texture);
+void pocketjs_core_set_image(
+    pocketjs_core_t *core,
+    int32_t id,
+    int32_t texture
+);
 void pocketjs_core_set_sprite(
+    pocketjs_core_t *core,
     int32_t id,
     int32_t atlas,
     uint32_t frames,
@@ -95,15 +151,16 @@ void pocketjs_core_set_sprite(
     uint32_t step
 );
 float pocketjs_core_measure_text(
+    pocketjs_core_t *core,
     const uint8_t *text,
     size_t len,
     uint32_t font_slot
 );
 
-void pocketjs_core_tick(void);
-uint64_t pocketjs_core_draw_hash(void);
-size_t pocketjs_core_draw_word_count(void);
-size_t pocketjs_core_framebuffer_bytes(void);
+void pocketjs_core_tick(pocketjs_core_t *core);
+uint64_t pocketjs_core_draw_hash(pocketjs_core_t *core);
+size_t pocketjs_core_draw_word_count(pocketjs_core_t *core);
+size_t pocketjs_core_framebuffer_bytes(pocketjs_core_t *core);
 
 typedef struct {
     uint32_t ppa_fills;
@@ -146,6 +203,7 @@ typedef struct {
  * aligned when PPA output is enabled.
  */
 int pocketjs_core_render_rgb565(
+    pocketjs_core_t *core,
     uint16_t *framebuffer,
     size_t len,
     pocketjs_render_stats_t *out_stats
@@ -161,6 +219,7 @@ int pocketjs_core_render_rgb565(
  * addresses are tracked for the Tab5 render pipeline.
  */
 int pocketjs_core_render_rgb565_incremental(
+    pocketjs_core_t *core,
     uint16_t *framebuffer,
     size_t len,
     pocketjs_render_stats_t *out_stats
@@ -174,6 +233,7 @@ int pocketjs_core_render_rgb565_incremental(
  * of commit, cancel, or abort before preparing another target.
  */
 int pocketjs_core_prepare_rgb565_frame(
+    pocketjs_core_t *core,
     uint32_t target_id,
     pocketjs_damage_plan_t *out_plan,
     pocketjs_render_stats_t *out_stats
@@ -187,6 +247,7 @@ int pocketjs_core_prepare_rgb565_frame(
  * modified. `len` is the strip size in bytes.
  */
 int pocketjs_core_render_rgb565_strip(
+    pocketjs_core_t *core,
     uint16_t *framebuffer,
     size_t len,
     uint32_t x,
@@ -201,18 +262,27 @@ int pocketjs_core_render_rgb565_strip(
  * the target if either the target id or current DrawList no longer matches the
  * prepared transaction.
  */
-int pocketjs_core_commit_rgb565_frame(uint32_t target_id);
+int pocketjs_core_commit_rgb565_frame(
+    pocketjs_core_t *core,
+    uint32_t target_id
+);
 
 /**
  * Drop a prepared target probe without changing its retained damage history.
  */
-int pocketjs_core_cancel_rgb565_frame(uint32_t target_id);
+int pocketjs_core_cancel_rgb565_frame(
+    pocketjs_core_t *core,
+    uint32_t target_id
+);
 
 /**
  * Drop a failed/partial update and invalidate the target for a full redraw on
  * its next prepare.
  */
-void pocketjs_core_abort_rgb565_frame(uint32_t target_id);
+void pocketjs_core_abort_rgb565_frame(
+    pocketjs_core_t *core,
+    uint32_t target_id
+);
 
 #ifdef __cplusplus
 }

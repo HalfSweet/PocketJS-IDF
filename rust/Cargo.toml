@@ -1,3 +1,11 @@
+[workspace]
+members = [
+    ".",
+    "pocketjs-core",
+    "pocketjs-esp32p4-ppa",
+]
+resolver = "2"
+
 [package]
 name = "pocketjs-esp32-core"
 version = "0.1.0"
