@@ -18,6 +18,7 @@ idf_component_register(
         esp_timer
         heap
         log
+        mbedtls
 )
 
 if(NOT IDF_TARGET STREQUAL "esp32p4")

@@ -5,6 +5,7 @@
 #include <string.h>
 
 #include "esp_log.h"
+#include "psa/crypto.h"
 
 #define POCKET_MAGIC 0x544b4350U
 #define POCKET_VERSION 1U
@@ -299,6 +300,113 @@ static bool js_read_u32(
     return ok;
 }
 
+static bool validate_plan_hash(JSContext *context, JSValueConst plan)
+{
+    static const char canonicalizer_source[] =
+        "(plan=>{"
+        "const hash=plan.planHash;"
+        "delete plan.planHash;"
+        "const canonical=value=>{"
+        "if(value===null||typeof value==='string'||"
+        "typeof value==='number'||typeof value==='boolean')"
+        "return JSON.stringify(value);"
+        "if(Array.isArray(value))"
+        "return '['+value.map(canonical).join(',')+']';"
+        "const keys=Object.keys(value).sort();"
+        "return '{'+keys.map(key=>JSON.stringify(key)+':'+"
+        "canonical(value[key])).join(',')+'}';"
+        "};"
+        "return [hash,canonical(plan)];"
+        "})";
+    JSValue canonicalizer = JS_Eval(
+        context,
+        canonicalizer_source,
+        sizeof(canonicalizer_source) - 1U,
+        "<pocket-plan-canonicalizer>",
+        JS_EVAL_TYPE_GLOBAL
+    );
+    if (JS_IsException(canonicalizer)) {
+        JS_FreeValue(context, canonicalizer);
+        JSValue exception = JS_GetException(context);
+        JS_FreeValue(context, exception);
+        return false;
+    }
+
+    JSValue argument = JS_DupValue(context, plan);
+    JSValue result = JS_Call(
+        context,
+        canonicalizer,
+        JS_UNDEFINED,
+        1,
+        &argument
+    );
+    JS_FreeValue(context, argument);
+    JS_FreeValue(context, canonicalizer);
+    if (JS_IsException(result)) {
+        JS_FreeValue(context, result);
+        JSValue exception = JS_GetException(context);
+        JS_FreeValue(context, exception);
+        return false;
+    }
+
+    JSValue expected_value = JS_GetPropertyUint32(context, result, 0);
+    JSValue canonical_value = JS_GetPropertyUint32(context, result, 1);
+    size_t expected_size = 0;
+    size_t canonical_size = 0;
+    const char *expected = JS_ToCStringLen(
+        context,
+        &expected_size,
+        expected_value
+    );
+    const char *canonical = JS_ToCStringLen(
+        context,
+        &canonical_size,
+        canonical_value
+    );
+    bool valid = false;
+    if (
+        expected != NULL &&
+        canonical != NULL &&
+        expected_size == 71U &&
+        memcmp(expected, "sha256:", 7U) == 0
+    ) {
+        uint8_t digest[32] = {0};
+        size_t digest_size = 0;
+        if (
+            psa_crypto_init() == PSA_SUCCESS &&
+            psa_hash_compute(
+                PSA_ALG_SHA_256,
+                (const uint8_t *)canonical,
+                canonical_size,
+                digest,
+                sizeof(digest),
+                &digest_size
+            ) == PSA_SUCCESS &&
+            digest_size == sizeof(digest)
+        ) {
+            static const char hex[] = "0123456789abcdef";
+            char actual[72] = "sha256:";
+            for (size_t index = 0; index < sizeof(digest); ++index) {
+                actual[7U + index * 2U] = hex[digest[index] >> 4U];
+                actual[8U + index * 2U] = hex[digest[index] & 0x0fU];
+            }
+            actual[71] = '\0';
+            valid = memcmp(expected, actual, expected_size) == 0;
+        }
+    }
+
+    if (canonical != NULL) {
+        JS_FreeCString(context, canonical);
+    }
+    if (expected != NULL) {
+        JS_FreeCString(context, expected);
+    }
+    JS_FreeValue(context, canonical_value);
+    JS_FreeValue(context, expected_value);
+    JS_FreeValue(context, result);
+    return valid;
+}
+
 esp_err_t pocketjs_package_validate_plan(
     JSContext *context,
     const pocketjs_app_t *app,
@@ -329,6 +437,10 @@ esp_err_t pocketjs_package_validate_plan(
     }
 
     esp_err_t result = ESP_ERR_INVALID_RESPONSE;
+    if (!validate_plan_hash(context, plan)) {
+        ESP_LOGE(TAG, ".pocket build plan checksum mismatch");
+        goto cleanup_plan;
+    }
     JSValue target = JS_GetPropertyStr(context, plan, "target");
     JSValue target_id = JS_GetPropertyStr(context, target, "id");
     const char *target_text = JS_ToCString(context, target_id);
@@ -370,6 +482,8 @@ cleanup_target:
     }
     JS_FreeValue(context, target_id);
     JS_FreeValue(context, target);
+
+cleanup_plan:
     JS_FreeValue(context, plan);
     return result;
 }
