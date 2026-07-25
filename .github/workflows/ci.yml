@@ -109,17 +109,23 @@ jobs:
     steps:
       - name: Check out the component
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          # Component Manager derives an override component's CMake name from
+          # its directory. GitHub otherwise checks out this repository as
+          # "PocketJS-IDF", which does not match halfsweet/pocketjs-idf on
+          # case-sensitive Linux runners.
+          path: pocketjs-idf
 
       - name: Cache CI toolchains
         uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
         with:
           path: |
-            .ci/cargo
-            .ci/rustup
-            .ci/bun
-            .ci/ccache
-            vendor/pocketjs/node_modules
-          key: idf-${{ matrix.idf }}-${{ matrix.mode }}-${{ hashFiles('rust/Cargo.lock', 'vendor/pocketjs/bun.lock') }}
+            pocketjs-idf/.ci/cargo
+            pocketjs-idf/.ci/rustup
+            pocketjs-idf/.ci/bun
+            pocketjs-idf/.ci/ccache
+            pocketjs-idf/vendor/pocketjs/node_modules
+          key: idf-${{ matrix.idf }}-${{ matrix.mode }}-${{ hashFiles('pocketjs-idf/rust/Cargo.lock', 'pocketjs-idf/vendor/pocketjs/bun.lock') }}
 
       - name: Build the consumer
         uses: espressif/esp-idf-ci-action@e6f5c74232b1ccd4c97ed641f1e48553853f1fd5 # v1.2.0
@@ -127,5 +133,7 @@ jobs:
           esp_idf_version: ${{ matrix.idf }}
           target: esp32p4
           extra_docker_args: >-
-            -e CCACHE_DIR=/app/${{ github.repository }}/.ci/ccache
-          command: bash tools/ci_idf_build.sh ${{ matrix.mode }}
+            -e CCACHE_DIR=/app/${{ github.repository }}/pocketjs-idf/.ci/ccache
+          command: >-
+            cd pocketjs-idf &&
+            bash tools/ci_idf_build.sh ${{ matrix.mode }}
