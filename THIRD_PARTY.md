@@ -15,9 +15,14 @@ The JavaScript build toolchain is stored under `vendor/pocketjs`. The
 platform-independent Rust Core and ESP32-P4 PPA backend are stored under
 `rust/`. Port-specific C wrappers are kept in `src/`.
 
+The two Core fixtures omitted by the original partial vendor copy are
+included byte-for-byte from upstream commit
+`e8b7cd83071e4f592bc919ccf4246feb80d68f9e`, an ancestor of the pinned base.
+Their exact paths and SHA-256 values are recorded in
+`tests/fixtures/README.md`.
+
 ## QuickJS-NG
 
 QuickJS-NG is not vendored. ESP-IDF Component Manager resolves
 `espressif/quickjs-ng` version `0.14.0` from the ESP Component Registry.
 Its component declares `MIT AND Apache-2.0`.
-
