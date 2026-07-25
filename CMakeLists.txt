@@ -20,6 +20,17 @@ idf_component_register(
         log
 )
 
+if(NOT IDF_TARGET STREQUAL "esp32p4")
+    message(FATAL_ERROR
+        "PocketJS-IDF v0.1 supports only IDF_TARGET=esp32p4."
+    )
+endif()
+if(DEFINED IDF_VERSION AND IDF_VERSION VERSION_LESS "5.4")
+    message(FATAL_ERROR
+        "PocketJS-IDF requires ESP-IDF 5.4 or newer."
+    )
+endif()
+
 find_program(POCKETJS_CARGO cargo)
 if(NOT POCKETJS_CARGO)
     message(FATAL_ERROR
@@ -29,6 +40,26 @@ if(NOT POCKETJS_CARGO)
 endif()
 
 set(POCKETJS_RUST_TARGET "riscv32imafc-unknown-none-elf")
+find_program(POCKETJS_RUSTUP rustup)
+if(POCKETJS_RUSTUP)
+    execute_process(
+        COMMAND "${POCKETJS_RUSTUP}" target list --installed
+        OUTPUT_VARIABLE POCKETJS_INSTALLED_RUST_TARGETS
+        RESULT_VARIABLE POCKETJS_RUSTUP_RESULT
+        OUTPUT_STRIP_TRAILING_WHITESPACE
+    )
+    if(
+        NOT POCKETJS_RUSTUP_RESULT EQUAL 0 OR
+        NOT POCKETJS_INSTALLED_RUST_TARGETS MATCHES
+            "(^|[\r\n])${POCKETJS_RUST_TARGET}([\r\n]|$)"
+    )
+        message(FATAL_ERROR
+            "PocketJS-IDF requires Rust target ${POCKETJS_RUST_TARGET}. "
+            "Install it with 'rustup target add ${POCKETJS_RUST_TARGET}'."
+        )
+    endif()
+endif()
+
 set(POCKETJS_RUST_MANIFEST "${CMAKE_CURRENT_SOURCE_DIR}/rust/Cargo.toml")
 set(POCKETJS_RUST_TARGET_DIR "${CMAKE_CURRENT_BINARY_DIR}/cargo")
 set(POCKETJS_RUST_LIBRARY
