@@ -4,6 +4,12 @@ on:
   push:
     tags:
       - "v*"
+  workflow_dispatch:
+    inputs:
+      tag:
+        description: Existing annotated semver tag to publish
+        required: true
+        type: string
 
 permissions:
   contents: read
@@ -13,6 +19,7 @@ jobs:
     name: Verify release tag and quality gates
     runs-on: ubuntu-latest
     outputs:
+      tag: ${{ steps.version.outputs.tag }}
       version: ${{ steps.version.outputs.version }}
     steps:
       - name: Check out the tagged commit
@@ -20,13 +27,16 @@ jobs:
         with:
           fetch-depth: 0
           fetch-tags: true
+          ref: ${{ github.event_name == 'workflow_dispatch' && inputs.tag || github.ref }}
           submodules: recursive
 
       - name: Validate annotated semver tag on main
         id: version
         shell: bash
+        env:
+          RELEASE_TAG: ${{ github.event_name == 'workflow_dispatch' && inputs.tag || github.ref_name }}
         run: |
-          tag="$GITHUB_REF_NAME"
+          tag="$RELEASE_TAG"
           semver='^v(0|[1-9][0-9]*)\.(0|[1-9][0-9]*)\.(0|[1-9][0-9]*)(-[0-9A-Za-z-]+(\.[0-9A-Za-z-]+)*)?(\+[0-9A-Za-z-]+(\.[0-9A-Za-z-]+)*)?$'
           [[ "$tag" =~ $semver ]]
           test "$(git cat-file -t "refs/tags/$tag")" = tag
@@ -35,6 +45,7 @@ jobs:
           git fetch --no-tags \
             origin main:refs/remotes/origin/main
           git merge-base --is-ancestor "$tag_commit" origin/main
+          echo "tag=$tag" >>"$GITHUB_OUTPUT"
           echo "version=${tag#v}" >>"$GITHUB_OUTPUT"
 
       - name: Verify the pinned PocketJS submodule
@@ -102,6 +113,7 @@ jobs:
       - name: Check out the tagged commit
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
+          ref: ${{ needs.verify-tag.outputs.tag }}
           submodules: recursive
 
       - name: Cache CI toolchains
@@ -130,18 +142,17 @@ jobs:
       - verify-tag
       - archive-consumer
     runs-on: ubuntu-latest
-    permissions:
-      contents: read
-      id-token: write
     steps:
       - name: Check out the tagged commit
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
+          ref: ${{ needs.verify-tag.outputs.tag }}
           submodules: recursive
 
-      - name: Upload with the trusted OIDC identity
+      - name: Upload with the Registry API token
         uses: espressif/upload-components-ci-action@v2
         with:
           namespace: halfsweet
           components: "pocketjs-idf: ."
           version: ${{ needs.verify-tag.outputs.version }}
+          api_token: ${{ secrets.IDF_COMPONENTS_TOKEN }}

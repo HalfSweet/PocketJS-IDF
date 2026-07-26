@@ -10,12 +10,14 @@ Registry and confirm all of the following:
 
 - namespace: `halfsweet`;
 - component: `pocketjs-idf`;
-- trusted uploader repository: `HalfSweet/PocketJS-IDF`;
-- trusted uploader workflow: `publish.yml`;
-- branch restriction: unset.
+- repository Actions secret: `IDF_COMPONENTS_TOKEN`.
 
-The publish job uses GitHub OIDC and `id-token: write`; no long-lived registry
-token is stored. Stop before tagging if the trusted uploader is not visible.
+The publish job passes this secret only to
+`espressif/upload-components-ci-action@v2`. GitHub OIDC publication is tracked
+upstream in
+[espressif/upload-components-ci-action#35](https://github.com/espressif/upload-components-ci-action/issues/35)
+because repositories created with immutable OIDC subjects are currently
+rejected by the Registry trusted-uploader path.
 
 ## Software gates
 
@@ -71,10 +73,19 @@ git tag -a v0.1.0-rc.1 -m "PocketJS-IDF v0.1.0-rc.1"
 git push origin v0.1.0-rc.1
 ```
 
+An existing tag can be revalidated and published without moving it:
+
+```sh
+gh workflow run publish.yml \
+  --ref main \
+  -f tag=v0.1.0-rc.1
+```
+
 `publish.yml` rejects non-semver tags, lightweight tags, and commits not
 contained in `origin/main`. It repeats source/package tests, packs the tagged
 component, builds an unpacked archive consumer with ESP-IDF 6.0.2, and only
-then invokes `espressif/upload-components-ci-action@v2`.
+then invokes `espressif/upload-components-ci-action@v2` with the Registry
+token.
 
 ## Registry verification
 

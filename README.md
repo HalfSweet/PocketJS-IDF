@@ -4,12 +4,10 @@ PocketJS runtime and RGB565 logical framebuffer management as one reusable
 ESP-IDF component for ESP32-P4.
 
 > [!IMPORTANT]
-> `0.1.0-rc.1` is a planned release candidate, not a published version yet.
-> The component and its clean consumers build locally, and all three Tab5
-> images passed both the 960-frame serial gate and human visual inspection.
-> The Registry trusted-uploader setup is still pending. Do not create the
-> release tag until every item in [docs/releasing.md](docs/releasing.md) is
-> complete.
+> `0.1.0-rc.1` is a release candidate. The component and its clean consumers
+> build independently, and all three Tab5 images passed both the 960-frame
+> serial gate and human visual inspection. See
+> [docs/releasing.md](docs/releasing.md) for the complete release record.
 
 The component owns:
 

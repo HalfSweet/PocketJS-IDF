@@ -1,6 +1,6 @@
 # Changelog
 
-## 0.1.0-rc.1 — unreleased
+## 0.1.0-rc.1 — 2026-07-26
 
 - Package PocketJS Core, QuickJS runtime, RGB565 renderer, logical display,
   and application tooling as one ESP-IDF component.
@@ -14,7 +14,7 @@
 - Pin the official PocketJS framework/compiler checkout as a Git submodule;
   Registry archives contain the required flattened sources without VCS
   metadata.
-- Add ESP-IDF 5.4.4/6.0.2, archive-consumer, and OIDC release workflows.
+- Add ESP-IDF 5.4.4/6.0.2, archive-consumer, and Registry-token release
+  workflows.
 
-Tab5 hardware acceptance completed on 2026-07-26. Registry publication setup
-remains pending.
+Tab5 hardware acceptance completed on 2026-07-26.
