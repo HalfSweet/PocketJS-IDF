@@ -46,7 +46,7 @@ import {
 const TARGET_ID = "esp32p4-idf";
 const HOST_ABI = 1;
 const RASTER_DENSITY = 1;
-const TOOLCHAIN_REVISION = "49726ab31cf1f55f1439eb19b3b6e1ad0260ae88";
+const TOOLCHAIN_REVISION = "a4e154789655cafa9dc0f57a8c83fc2114d74776";
 const TOOLCHAIN_DIRECTORIES = [
   "assets/fonts",
   "contracts",
@@ -199,79 +199,6 @@ function syncPinnedToolchain(source: string, destination: string): void {
     }
     copyFileSync(from, join(destination, file));
   }
-}
-
-function replaceExactlyOnce(
-  source: string,
-  before: string,
-  after: string,
-  description: string,
-): string {
-  const first = source.indexOf(before);
-  if (first < 0 || source.indexOf(before, first + before.length) >= 0) {
-    fail(
-      `cannot apply the ${description} overlay to PocketJS ` +
-        `${TOOLCHAIN_REVISION}; the pinned upstream source changed`,
-    );
-  }
-  return source.slice(0, first) + after + source.slice(first + before.length);
-}
-
-async function applyIdfToolchainOverlay(workRoot: string): Promise<void> {
-  const pluginPath = join(
-    workRoot,
-    "framework",
-    "compiler",
-    "jsx-plugin.ts",
-  );
-  let source = await Bun.file(pluginPath).text();
-  source = replaceExactlyOnce(
-    source,
-    `const VUE_VAPOR_RUNTIME_PATH = new URL(
-  "../../node_modules/vue/dist/vue.runtime-with-vapor.esm-browser.prod.js",
-  import.meta.url,
-).pathname;
-`,
-    `const VUE_VAPOR_RUNTIME_PATH = new URL(
-  "../../node_modules/vue/dist/vue.runtime-with-vapor.esm-browser.prod.js",
-  import.meta.url,
-).pathname;
-const SOLID_RUNTIME_PATH = new URL(
-  "../../node_modules/solid-js/dist/solid.js",
-  import.meta.url,
-).pathname;
-const SOLID_UNIVERSAL_RUNTIME_PATH = new URL(
-  "../../node_modules/solid-js/universal/dist/universal.js",
-  import.meta.url,
-).pathname;
-`,
-    "Solid runtime path",
-  );
-  source = replaceExactlyOnce(
-    source,
-    `      build.onResolve({ filter: /^@pocketjs\\/framework(?:\\/.*)?$/ }, (args) => {
-        const path = packagePath(args.path, framework);
-        return path ? { path } : undefined;
-      });
-      if (framework === "vue-vapor") {
-`,
-    `      build.onResolve({ filter: /^@pocketjs\\/framework(?:\\/.*)?$/ }, (args) => {
-        const path = packagePath(args.path, framework);
-        return path ? { path } : undefined;
-      });
-      if (framework === "solid") {
-        build.onResolve({ filter: /^solid-js$/ }, () => ({
-          path: SOLID_RUNTIME_PATH,
-        }));
-        build.onResolve({ filter: /^solid-js\\/universal$/ }, () => ({
-          path: SOLID_UNIVERSAL_RUNTIME_PATH,
-        }));
-      }
-      if (framework === "vue-vapor") {
-`,
-    "Solid browser resolver",
-  );
-  await Bun.write(pluginPath, source);
 }
 
 function lstatExists(path: string): boolean {
@@ -461,7 +388,6 @@ async function main(): Promise<void> {
 
   syncPinnedToolchain(vendorRoot, workRoot);
   linkDependencies(sourceModules, join(workRoot, "node_modules"));
-  await applyIdfToolchainOverlay(workRoot);
   /*
    * Upstream pass 1 walks framework imports before it generates this module.
    * Bun on case-sensitive Linux caches that first failed relative resolution,
