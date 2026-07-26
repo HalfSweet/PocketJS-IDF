@@ -1,6 +1,5 @@
 dependencies:
   halfsweet/pocketjs-idf:
     version: "*"
-    pre_release: true
     override_path: "../../.."
     require: private

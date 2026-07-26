@@ -4,10 +4,11 @@ PocketJS runtime and RGB565 logical framebuffer management as one reusable
 ESP-IDF component for ESP32-P4.
 
 > [!IMPORTANT]
-> `0.1.0-rc.2` is a release candidate. The component, clean archive consumer,
-> and all three Tab5 images build independently. Tagging remains gated on the
-> rc.2 device run and human visual inspection. See
-> [docs/releasing.md](docs/releasing.md) for the current release record.
+> `0.1.0` is the first stable component release. The component, clean archive
+> consumer, and all three Tab5 images build independently. The display path
+> previously passed the rc.1 960-frame and human visual gates; the maintainer
+> approved the stable release without claiming a new device run. See
+> [docs/releasing.md](docs/releasing.md) for the release record.
 
 The component owns:
 
@@ -55,14 +56,12 @@ archive, so Registry consumers do not need Git or submodule initialization.
 
 ## Add the component
 
-After the RC is published, add this to the consumer component's
-`idf_component.yml`:
+Add this to the consumer component's `idf_component.yml`:
 
 ```yaml
 dependencies:
   halfsweet/pocketjs-idf:
-    version: "0.1.0-rc.2"
-    pre_release: true
+    version: "0.1.0"
 ```
 
 For local development, temporarily add:

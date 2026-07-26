@@ -96,15 +96,15 @@ jobs:
           --disable-pip-version-check
           idf-component-manager==3.0.3
 
-      - name: Lint, pack, and audit the RC component
+      - name: Lint, pack, and audit the component
         run: |
           pack_dir="$RUNNER_TEMP/pocketjs-component-pack"
           mkdir -p "$pack_dir"
           compote -W component pack \
             --name pocketjs-idf \
-            --version 0.1.0-rc.2 \
+            --version 0.1.0 \
             --dest-dir "$pack_dir"
-          tar -tzf "$pack_dir/pocketjs-idf_0.1.0-rc.2.tgz" \
+          tar -tzf "$pack_dir/pocketjs-idf_0.1.0.tgz" \
             >"$pack_dir/archive.list"
           grep -qx \
             './vendor/pocketjs/contracts/spec/pocket-package.ts' \
