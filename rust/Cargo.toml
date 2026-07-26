@@ -1,9 +1,5 @@
 [workspace]
-members = [
-    ".",
-    "pocketjs-core",
-    "pocketjs-esp32p4-ppa",
-]
+members = ["."]
 resolver = "2"
 
 [package]
@@ -18,8 +14,8 @@ name = "pocketjs_esp32_core"
 crate-type = ["staticlib"]
 
 [dependencies]
-pocketjs-core = { path = "pocketjs-core" }
-pocketjs-esp32p4-ppa = { path = "pocketjs-esp32p4-ppa" }
+pocketjs-core = { path = "../vendor/pocketjs/engine/core" }
+pocketjs-esp32p4-ppa = { path = "../vendor/pocketjs/engine/backends/esp32p4-ppa" }
 
 [profile.release]
 codegen-units = 1

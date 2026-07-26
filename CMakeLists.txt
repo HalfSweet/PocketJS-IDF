@@ -71,6 +71,10 @@ file(GLOB_RECURSE POCKETJS_RUST_SOURCES CONFIGURE_DEPENDS
     "${CMAKE_CURRENT_SOURCE_DIR}/rust/*.rs"
     "${CMAKE_CURRENT_SOURCE_DIR}/rust/*.toml"
     "${CMAKE_CURRENT_SOURCE_DIR}/rust/Cargo.lock"
+    "${CMAKE_CURRENT_SOURCE_DIR}/vendor/pocketjs/engine/core/*.rs"
+    "${CMAKE_CURRENT_SOURCE_DIR}/vendor/pocketjs/engine/core/*.toml"
+    "${CMAKE_CURRENT_SOURCE_DIR}/vendor/pocketjs/engine/backends/esp32p4-ppa/*.rs"
+    "${CMAKE_CURRENT_SOURCE_DIR}/vendor/pocketjs/engine/backends/esp32p4-ppa/*.toml"
 )
 
 add_custom_command(
