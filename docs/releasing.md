@@ -1,7 +1,8 @@
 # Release process
 
-No release is published merely because the software CI is green. The first
-allowed tag is the annotated tag `v0.1.0-rc.1`, after all gates below pass.
+No release is published merely because the software checks are green. The
+current candidate is `v0.1.0-rc.2`; create its annotated tag only after every
+gate below passes.
 
 ## Registry prerequisite
 
@@ -21,23 +22,27 @@ rejected by the Registry trusted-uploader path.
 
 ## Software gates
 
-- [x] adapter `cargo fmt --check`;
-- [x] complete Rust workspace `cargo test --locked`;
+- [x] component adapter `cargo fmt --check`;
+- [x] component adapter `cargo test --locked`;
+- [x] upstream Core 100-test suite;
+- [x] upstream ESP32-P4 PPA 20-test suite and `esp-idf` feature check;
 - [x] pinned Bun frozen install and encoder tests;
-- [x] official PocketJS submodule is initialized at
-  `49726ab31cf1f55f1439eb19b3b6e1ad0260ae88`;
+- [x] downstream PocketJS submodule can be cloned from
+  `HalfSweet/pocketjs` at
+  `a4e154789655cafa9dc0f57a8c83fc2114d74776`;
 - [x] deterministic `.pocket` generation;
 - [x] Component Manager warning-as-error pack;
 - [x] archive contains the required flattened PocketJS sources and no VCS
-  metadata, cache, build, Cargo target, or `node_modules`;
+  metadata, duplicate Rust crates, cache, build, Cargo target, or
+  `node_modules`;
 - [x] unpacked archive consumer links and produces a firmware `.bin`;
-- [x] prebuilt example builds with ESP-IDF 5.4.4 and 6.0.2;
-- [x] source-build example builds with ESP-IDF 6.0.2;
+- [x] prebuilt and source-build examples link with local ESP-IDF 6.1;
+- [ ] prebuilt example builds with ESP-IDF 5.4.4 and 6.0.2 in CI;
+- [ ] source-build example builds with ESP-IDF 6.0.2 in CI;
 - [x] the current Tab5 consumer fully links with local ESP-IDF 6.1.
 
-The vendored upstream Core is kept in its pinned formatting. Rustfmt applies
-to the component-owned FFI crate and PPA adapter; workspace tests cover all
-three crates.
+Rustfmt applies to the component-owned FFI crate. Upstream Core and PPA source
+is tested directly from the pinned submodule checkout.
 
 ## Tab5 hardware gates
 
@@ -49,18 +54,20 @@ ESP32-P4 rev 1.3 M5Stack Tab5.
 - [x] main task stack remains 128 KiB;
 - [x] partition table offset remains `0x10000`;
 - [x] all three firmware images link and generate `.bin` files;
-- [x] all three run for at least 960 frames;
-- [x] Vue and Solid receive live BMI270 values through a QuickJS extension;
-- [x] orientation and RGB565 colors are visually correct;
-- [x] rounded corners and 1.875x fractional-scale boundaries have no seams;
-- [x] dirty regions leave no stale pixels;
-- [x] no visible tearing or animation discontinuity;
-- [x] serial output has no PPA, display transaction, memory, QuickJS, IMU, or
+- [ ] all three run for at least 960 frames;
+- [ ] Vue and Solid receive live BMI270 values through a QuickJS extension;
+- [ ] orientation and RGB565 colors are visually correct;
+- [ ] rounded corners and 1.875x fractional-scale boundaries have no seams;
+- [ ] dirty regions leave no stale pixels;
+- [ ] no visible tearing or animation discontinuity;
+- [ ] serial output has no PPA, display transaction, memory, QuickJS, IMU, or
   task-watchdog error;
-- [x] profiler values and firmware sizes are recorded in the Tab5 repository.
+- [ ] profiler values are recorded in the Tab5 repository.
+- [x] firmware sizes are recorded: Vue 1,793,632 bytes, Solid 1,647,120 bytes,
+  and Motion Lab 1,806,944 bytes.
 
-These observations and the maintainer's visual approval were recorded on
-2026-07-26.
+The rc.1 observations and maintainer visual approval were recorded on
+2026-07-26. They do not replace the pending rc.2 device run.
 
 ## Tag and publish
 
@@ -69,8 +76,8 @@ After the PR is merged to `main` and every gate is checked:
 ```sh
 git switch main
 git pull --ff-only
-git tag -a v0.1.0-rc.1 -m "PocketJS-IDF v0.1.0-rc.1"
-git push origin v0.1.0-rc.1
+git tag -a v0.1.0-rc.2 -m "PocketJS-IDF v0.1.0-rc.2"
+git push origin v0.1.0-rc.2
 ```
 
 An existing tag can be revalidated and published without moving it:
@@ -78,7 +85,7 @@ An existing tag can be revalidated and published without moving it:
 ```sh
 gh workflow run publish.yml \
   --ref main \
-  -f tag=v0.1.0-rc.1
+  -f tag=v0.1.0-rc.2
 ```
 
 `publish.yml` rejects non-semver tags, lightweight tags, and commits not
@@ -94,7 +101,7 @@ After publishing, create a new project outside both repositories with:
 ```yaml
 dependencies:
   halfsweet/pocketjs-idf:
-    version: "0.1.0-rc.1"
+    version: "0.1.0-rc.2"
     pre_release: true
 ```
 

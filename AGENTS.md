@@ -17,10 +17,11 @@
 
 ## Upstream and target constraints
 
-- PocketJS framework/tooling is pinned to
-  `49726ab31cf1f55f1439eb19b3b6e1ad0260ae88`.
-- The vendored Core and ESP32-P4 PPA port is based on
-  `5a5ffc78355aeee906c978884d6d5b83d6386b74`.
+- PocketJS framework/tooling, Core, and ESP32-P4 PPA backend are sourced
+  directly from the `HalfSweet/pocketjs` downstream submodule pinned to
+  `a4e154789655cafa9dc0f57a8c83fc2114d74776`.
+- Keep the component-owned `rust/` crate limited to the C ABI, allocator, and
+  ESP-IDF driver bridges. Do not copy upstream Rust crates into it.
 - Minimum ESP-IDF is 5.4 and QuickJS-NG is pinned to component version 0.14.0.
 - Build Rust for `riscv32imafc-unknown-none-elf` with the checked-in lockfile.
 - ESP-IDF PPA RGB565 fixed fills must use expanded ARGB components through
@@ -28,8 +29,8 @@
 
 ## Verification
 
-- Run Rust workspace tests, package/tooling tests, component-manager lint and
-  pack checks, and full ESP-IDF link tests.
+- Run the component Rust tests, the upstream Core and PPA backend tests,
+  package/tooling tests, component-manager lint and pack checks, and full
+  ESP-IDF link tests.
 - Do not claim on-device verification without flashing and observing hardware.
 - Do not tag a release until all CI and hardware release gates pass.
-

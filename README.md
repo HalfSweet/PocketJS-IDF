@@ -4,10 +4,10 @@ PocketJS runtime and RGB565 logical framebuffer management as one reusable
 ESP-IDF component for ESP32-P4.
 
 > [!IMPORTANT]
-> `0.1.0-rc.1` is a release candidate. The component and its clean consumers
-> build independently, and all three Tab5 images passed both the 960-frame
-> serial gate and human visual inspection. See
-> [docs/releasing.md](docs/releasing.md) for the complete release record.
+> `0.1.0-rc.2` is a release candidate. The component, clean archive consumer,
+> and all three Tab5 images build independently. Tagging remains gated on the
+> rc.2 device run and human visual inspection. See
+> [docs/releasing.md](docs/releasing.md) for the current release record.
 
 The component owns:
 
@@ -35,8 +35,9 @@ scaling, physical framebuffers, DMA, and swap/retirement policy.
 
 ## Clone for development
 
-The official PocketJS framework/compiler source is a Git submodule fixed to
-commit `49726ab31cf1f55f1439eb19b3b6e1ad0260ae88`:
+PocketJS framework, compiler, Core, and ESP32-P4 renderer source is a Git
+submodule fixed to the reviewed downstream commit
+`a4e154789655cafa9dc0f57a8c83fc2114d74776`:
 
 ```sh
 git clone --recurse-submodules \
@@ -45,10 +46,12 @@ cd PocketJS-IDF
 git submodule update --init --recursive
 ```
 
-The submodule URL is
-`https://github.com/pocket-stack/pocketjs.git`. Component packing flattens its
-required source files into the Registry archive, so Registry consumers do not
-need Git or submodule initialization.
+The submodule URL is `https://github.com/HalfSweet/pocketjs.git`. The commit is
+based on official PocketJS commit
+`e8a8e807da7d74b98dde9cb604b6a67e6735a87b`; its upstream review remains
+[pocket-stack/pocketjs#190](https://github.com/pocket-stack/pocketjs/pull/190).
+Component packing flattens the required source files into the Registry
+archive, so Registry consumers do not need Git or submodule initialization.
 
 ## Add the component
 
@@ -58,7 +61,7 @@ After the RC is published, add this to the consumer component's
 ```yaml
 dependencies:
   halfsweet/pocketjs-idf:
-    version: "0.1.0-rc.1"
+    version: "0.1.0-rc.2"
     pre_release: true
 ```
 

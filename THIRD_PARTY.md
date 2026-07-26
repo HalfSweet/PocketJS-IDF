@@ -3,25 +3,21 @@
 ## PocketJS
 
 - Repository: <https://github.com/pocket-stack/pocketjs>
-- Framework, compiler, package contract, and base Core commit:
-  `49726ab31cf1f55f1439eb19b3b6e1ad0260ae88`
-- ESP32-P4 Core/PPA fork commit:
-  `5a5ffc78355aeee906c978884d6d5b83d6386b74`
-- Local dirty-region extensions were checkpointed in PocketJS-esp32p4 commits
-  `29be939` and `ec6665f`.
+- Downstream repository: <https://github.com/HalfSweet/pocketjs>
+- Framework, compiler, package contract, Core, and ESP32-P4 PPA backend
+  commit: `a4e154789655cafa9dc0f57a8c83fc2114d74776`
+- Based on official commit:
+  `e8a8e807da7d74b98dde9cb604b6a67e6735a87b`
+- Upstream review:
+  <https://github.com/pocket-stack/pocketjs/pull/190>
 - License: MIT; see `licenses/POCKETJS-MIT.txt`.
 
-The official JavaScript framework/compiler source is checked out as the
-`vendor/pocketjs` submodule at the exact base commit. Component packing copies
-the required checked-out files into the Registry archive and excludes all Git
-metadata. The platform-independent Rust Core and ESP32-P4 PPA backend port are
-stored under `rust/`. Port-specific C wrappers are kept in `src/`.
-
-The two Core fixtures omitted by the original partial vendor copy are
-included byte-for-byte from upstream commit
-`e8b7cd83071e4f592bc919ccf4246feb80d68f9e`, an ancestor of the pinned base.
-Their exact paths and SHA-256 values are recorded in
-`tests/fixtures/README.md`.
+The complete downstream checkout is the `vendor/pocketjs` submodule. The
+component consumes `engine/core` and `engine/backends/esp32p4-ppa` directly;
+there is no second copied Core or renderer crate. Component packing flattens
+the required checked-out files into the Registry archive and excludes Git
+metadata, upstream tests, and build artifacts. Component-specific C and Rust
+ABI wrappers remain in `src/` and `rust/src/`.
 
 ## QuickJS-NG
 

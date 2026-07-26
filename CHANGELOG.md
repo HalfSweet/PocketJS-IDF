@@ -1,5 +1,16 @@
 # Changelog
 
+## 0.1.0-rc.2 — 2026-07-26
+
+- Consume PocketJS Core and the ESP32-P4 PPA backend directly from a pinned
+  `HalfSweet/pocketjs` downstream submodule while upstream review continues.
+- Upstream transactional damage prepare/commit/abort, compact RGB565 strip
+  rendering, and strip-local PPA coordinate translation.
+- Remove the duplicate component-local Core/backend crates and test fixtures.
+- Remove the obsolete Solid compiler overlay now provided by PocketJS itself.
+- Test the upstream Core and PPA crates in CI and verify that Registry archives
+  contain those sources without duplicate Rust trees.
+
 ## 0.1.0-rc.1 — 2026-07-26
 
 - Package PocketJS Core, QuickJS runtime, RGB565 renderer, logical display,
