@@ -22,9 +22,12 @@ token is stored. Stop before tagging if the trusted uploader is not visible.
 - [ ] adapter `cargo fmt --check`;
 - [ ] complete Rust workspace `cargo test --locked`;
 - [ ] pinned Bun frozen install and encoder tests;
+- [ ] official PocketJS submodule is initialized at
+  `49726ab31cf1f55f1439eb19b3b6e1ad0260ae88`;
 - [ ] deterministic `.pocket` generation;
 - [ ] Component Manager warning-as-error pack;
-- [ ] archive contains no VCS, cache, build, Cargo target, or `node_modules`;
+- [ ] archive contains the required flattened PocketJS sources and no VCS
+  metadata, cache, build, Cargo target, or `node_modules`;
 - [ ] unpacked archive consumer links and produces a firmware `.bin`;
 - [ ] prebuilt example builds with ESP-IDF 5.4.4 and 6.0.2;
 - [ ] source-build example builds with ESP-IDF 6.0.2;

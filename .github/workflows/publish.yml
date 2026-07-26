@@ -20,6 +20,7 @@ jobs:
         with:
           fetch-depth: 0
           fetch-tags: true
+          submodules: recursive
 
       - name: Validate annotated semver tag on main
         id: version
@@ -35,6 +36,11 @@ jobs:
             origin main:refs/remotes/origin/main
           git merge-base --is-ancestor "$tag_commit" origin/main
           echo "version=${tag#v}" >>"$GITHUB_OUTPUT"
+
+      - name: Verify the pinned PocketJS submodule
+        run: >-
+          test "$(git -C vendor/pocketjs rev-parse HEAD)"
+          = 49726ab31cf1f55f1439eb19b3b6e1ad0260ae88
 
       - name: Cache Rust and Bun dependencies
         uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
@@ -95,6 +101,8 @@ jobs:
     steps:
       - name: Check out the tagged commit
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          submodules: recursive
 
       - name: Cache CI toolchains
         uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
@@ -128,6 +136,8 @@ jobs:
     steps:
       - name: Check out the tagged commit
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          submodules: recursive
 
       - name: Upload with the trusted OIDC identity
         uses: espressif/upload-components-ci-action@v2

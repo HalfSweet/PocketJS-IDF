@@ -58,8 +58,14 @@ case "$mode" in
       --dest-dir "$archive_dir"
     archive="$archive_dir/pocketjs-idf_${package_version}.tgz"
     tar -tzf "$archive" >"$archive_dir/archive.list"
+    grep -qx \
+      './vendor/pocketjs/contracts/spec/pocket-package.ts' \
+      "$archive_dir/archive.list"
+    grep -qx \
+      './vendor/pocketjs/framework/src/index.ts' \
+      "$archive_dir/archive.list"
     if grep -E \
-      '^\./(\.git/|\.github/|\.ci/|AGENTS\.md$|.*node_modules/|.*target/)' \
+      '^\./(\.git($|/)|\.gitmodules$|\.github/|\.ci/|AGENTS\.md$|.*/\.git($|/)|.*node_modules/|.*target/)' \
       "$archive_dir/archive.list"; then
       echo "component archive contains a forbidden local artifact" >&2
       exit 1
