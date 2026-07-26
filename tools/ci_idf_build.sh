@@ -2,7 +2,7 @@
 set -euo pipefail
 
 mode="${1:-}"
-package_version="${2:-0.1.0-rc.1}"
+package_version="${2:-0.1.0-rc.2}"
 case "$mode" in
   prebuilt|source|archive) ;;
   *)
@@ -64,6 +64,18 @@ case "$mode" in
     grep -qx \
       './vendor/pocketjs/framework/src/index.ts' \
       "$archive_dir/archive.list"
+    grep -qx \
+      './vendor/pocketjs/engine/core/src/damage.rs' \
+      "$archive_dir/archive.list"
+    grep -qx \
+      './vendor/pocketjs/engine/backends/esp32p4-ppa/src/lib.rs' \
+      "$archive_dir/archive.list"
+    if grep -E \
+      '^\./rust/(pocketjs-core|pocketjs-esp32p4-ppa)/' \
+      "$archive_dir/archive.list"; then
+      echo "component archive contains a duplicate Rust crate" >&2
+      exit 1
+    fi
     if grep -E \
       '^\./(\.git($|/)|\.gitmodules$|\.github/|\.ci/|AGENTS\.md$|.*/\.git($|/)|.*node_modules/|.*target/)' \
       "$archive_dir/archive.list"; then

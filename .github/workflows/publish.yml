@@ -51,7 +51,7 @@ jobs:
       - name: Verify the pinned PocketJS submodule
         run: >-
           test "$(git -C vendor/pocketjs rev-parse HEAD)"
-          = 49726ab31cf1f55f1439eb19b3b6e1ad0260ae88
+          = a4e154789655cafa9dc0f57a8c83fc2114d74776
 
       - name: Cache Rust and Bun dependencies
         uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
@@ -62,7 +62,7 @@ jobs:
             ~/.bun/install/cache
             rust/target
             vendor/pocketjs/node_modules
-          key: release-${{ runner.os }}-${{ hashFiles('rust/Cargo.lock', 'vendor/pocketjs/bun.lock') }}
+          key: release-${{ runner.os }}-${{ hashFiles('rust/Cargo.lock', 'vendor/pocketjs/engine/core/Cargo.lock', 'vendor/pocketjs/engine/backends/esp32p4-ppa/Cargo.lock', 'vendor/pocketjs/bun.lock') }}
 
       - name: Install pinned Rust and Bun toolchains
         run: |
@@ -87,9 +87,20 @@ jobs:
           cargo fmt \
             --manifest-path rust/Cargo.toml \
             --package pocketjs-esp32-core \
-            --package pocketjs-esp32p4-ppa \
             -- --check
           cargo test --manifest-path rust/Cargo.toml --workspace --locked
+          cargo test \
+            --manifest-path vendor/pocketjs/engine/core/Cargo.toml \
+            --features std \
+            --locked
+          cargo test \
+            --manifest-path vendor/pocketjs/engine/backends/esp32p4-ppa/Cargo.toml \
+            --features std \
+            --locked
+          cargo check \
+            --manifest-path vendor/pocketjs/engine/backends/esp32p4-ppa/Cargo.toml \
+            --features esp-idf \
+            --locked
           bun test tests/pocket_package.test.ts
           python -m unittest discover -s tests -p 'test_*.py'
           tools/check_determinism.sh

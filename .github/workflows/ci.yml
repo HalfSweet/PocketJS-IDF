@@ -29,7 +29,7 @@ jobs:
       - name: Verify the pinned PocketJS submodule
         run: >-
           test "$(git -C vendor/pocketjs rev-parse HEAD)"
-          = 49726ab31cf1f55f1439eb19b3b6e1ad0260ae88
+          = a4e154789655cafa9dc0f57a8c83fc2114d74776
 
       - name: Cache Rust and Bun dependencies
         uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
@@ -40,7 +40,7 @@ jobs:
             ~/.bun/install/cache
             rust/target
             vendor/pocketjs/node_modules
-          key: quality-${{ runner.os }}-${{ hashFiles('rust/Cargo.lock', 'vendor/pocketjs/bun.lock') }}
+          key: quality-${{ runner.os }}-${{ hashFiles('rust/Cargo.lock', 'vendor/pocketjs/engine/core/Cargo.lock', 'vendor/pocketjs/engine/backends/esp32p4-ppa/Cargo.lock', 'vendor/pocketjs/bun.lock') }}
 
       - name: Install pinned Rust toolchain
         run: |
@@ -61,11 +61,26 @@ jobs:
           cargo fmt
           --manifest-path rust/Cargo.toml
           --package pocketjs-esp32-core
-          --package pocketjs-esp32p4-ppa
           -- --check
 
-      - name: Test the Rust workspace
-        run: cargo test --manifest-path rust/Cargo.toml --workspace --locked
+      - name: Test the Rust integration and upstream crates
+        run: |
+          cargo test \
+            --manifest-path rust/Cargo.toml \
+            --workspace \
+            --locked
+          cargo test \
+            --manifest-path vendor/pocketjs/engine/core/Cargo.toml \
+            --features std \
+            --locked
+          cargo test \
+            --manifest-path vendor/pocketjs/engine/backends/esp32p4-ppa/Cargo.toml \
+            --features std \
+            --locked
+          cargo check \
+            --manifest-path vendor/pocketjs/engine/backends/esp32p4-ppa/Cargo.toml \
+            --features esp-idf \
+            --locked
 
       - name: Test the Pocket encoder and embed validator
         run: |
@@ -87,9 +102,9 @@ jobs:
           mkdir -p "$pack_dir"
           compote -W component pack \
             --name pocketjs-idf \
-            --version 0.1.0-rc.1 \
+            --version 0.1.0-rc.2 \
             --dest-dir "$pack_dir"
-          tar -tzf "$pack_dir/pocketjs-idf_0.1.0-rc.1.tgz" \
+          tar -tzf "$pack_dir/pocketjs-idf_0.1.0-rc.2.tgz" \
             >"$pack_dir/archive.list"
           grep -qx \
             './vendor/pocketjs/contracts/spec/pocket-package.ts' \
@@ -97,6 +112,18 @@ jobs:
           grep -qx \
             './vendor/pocketjs/framework/src/index.ts' \
             "$pack_dir/archive.list"
+          grep -qx \
+            './vendor/pocketjs/engine/core/src/damage.rs' \
+            "$pack_dir/archive.list"
+          grep -qx \
+            './vendor/pocketjs/engine/backends/esp32p4-ppa/src/lib.rs' \
+            "$pack_dir/archive.list"
+          if grep -E \
+            '^\./rust/(pocketjs-core|pocketjs-esp32p4-ppa)/' \
+            "$pack_dir/archive.list"; then
+            echo "component archive contains a duplicate Rust crate" >&2
+            exit 1
+          fi
           if grep -E \
             '^\./(\.git($|/)|\.gitmodules$|\.github/|\.ci/|AGENTS\.md$|.*/\.git($|/)|.*node_modules/|.*target/)' \
             "$pack_dir/archive.list"; then
