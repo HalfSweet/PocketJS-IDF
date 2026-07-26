@@ -6,9 +6,10 @@ ESP-IDF component for ESP32-P4.
 > [!IMPORTANT]
 > `0.1.0-rc.1` is a planned release candidate, not a published version yet.
 > The component and its clean consumers build locally, and all three Tab5
-> images passed the 960-frame serial gate. Human visual inspection and the
-> Registry trusted-uploader setup are still pending. Do not create the release
-> tag until every item in [docs/releasing.md](docs/releasing.md) is complete.
+> images passed both the 960-frame serial gate and human visual inspection.
+> The Registry trusted-uploader setup is still pending. Do not create the
+> release tag until every item in [docs/releasing.md](docs/releasing.md) is
+> complete.
 
 The component owns:
 

@@ -19,19 +19,19 @@ token is stored. Stop before tagging if the trusted uploader is not visible.
 
 ## Software gates
 
-- [ ] adapter `cargo fmt --check`;
-- [ ] complete Rust workspace `cargo test --locked`;
-- [ ] pinned Bun frozen install and encoder tests;
-- [ ] official PocketJS submodule is initialized at
+- [x] adapter `cargo fmt --check`;
+- [x] complete Rust workspace `cargo test --locked`;
+- [x] pinned Bun frozen install and encoder tests;
+- [x] official PocketJS submodule is initialized at
   `49726ab31cf1f55f1439eb19b3b6e1ad0260ae88`;
-- [ ] deterministic `.pocket` generation;
-- [ ] Component Manager warning-as-error pack;
-- [ ] archive contains the required flattened PocketJS sources and no VCS
+- [x] deterministic `.pocket` generation;
+- [x] Component Manager warning-as-error pack;
+- [x] archive contains the required flattened PocketJS sources and no VCS
   metadata, cache, build, Cargo target, or `node_modules`;
-- [ ] unpacked archive consumer links and produces a firmware `.bin`;
-- [ ] prebuilt example builds with ESP-IDF 5.4.4 and 6.0.2;
-- [ ] source-build example builds with ESP-IDF 6.0.2;
-- [ ] the current Tab5 consumer fully links with local ESP-IDF 6.1.
+- [x] unpacked archive consumer links and produces a firmware `.bin`;
+- [x] prebuilt example builds with ESP-IDF 5.4.4 and 6.0.2;
+- [x] source-build example builds with ESP-IDF 6.0.2;
+- [x] the current Tab5 consumer fully links with local ESP-IDF 6.1.
 
 The vendored upstream Core is kept in its pinned formatting. Rustfmt applies
 to the component-owned FFI crate and PPA adapter; workspace tests cover all
@@ -42,22 +42,23 @@ three crates.
 Build, flash, and observe Vue Vapor, Solid, and Motion Lab separately on an
 ESP32-P4 rev 1.3 M5Stack Tab5.
 
-- [ ] each firmware keeps the rev-less-than-v3 target selection;
-- [ ] CPU remains 360 MHz;
-- [ ] main task stack remains 128 KiB;
-- [ ] partition table offset remains `0x10000`;
-- [ ] all three firmware images link and generate `.bin` files;
-- [ ] all three run for at least 960 frames;
-- [ ] Vue and Solid receive live BMI270 values through a QuickJS extension;
-- [ ] orientation and RGB565 colors are visually correct;
-- [ ] rounded corners and 1.875x fractional-scale boundaries have no seams;
-- [ ] dirty regions leave no stale pixels;
-- [ ] no visible tearing or animation discontinuity;
-- [ ] serial output has no PPA, display transaction, memory, QuickJS, IMU, or
+- [x] each firmware keeps the rev-less-than-v3 target selection;
+- [x] CPU remains 360 MHz;
+- [x] main task stack remains 128 KiB;
+- [x] partition table offset remains `0x10000`;
+- [x] all three firmware images link and generate `.bin` files;
+- [x] all three run for at least 960 frames;
+- [x] Vue and Solid receive live BMI270 values through a QuickJS extension;
+- [x] orientation and RGB565 colors are visually correct;
+- [x] rounded corners and 1.875x fractional-scale boundaries have no seams;
+- [x] dirty regions leave no stale pixels;
+- [x] no visible tearing or animation discontinuity;
+- [x] serial output has no PPA, display transaction, memory, QuickJS, IMU, or
   task-watchdog error;
-- [ ] profiler values and firmware sizes are recorded in the Tab5 repository.
+- [x] profiler values and firmware sizes are recorded in the Tab5 repository.
 
-Do not claim device verification until these observations are recorded.
+These observations and the maintainer's visual approval were recorded on
+2026-07-26.
 
 ## Tag and publish
 

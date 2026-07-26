@@ -16,4 +16,5 @@
   metadata.
 - Add ESP-IDF 5.4.4/6.0.2, archive-consumer, and OIDC release workflows.
 
-Hardware acceptance is intentionally still pending.
+Tab5 hardware acceptance completed on 2026-07-26. Registry publication setup
+remains pending.
