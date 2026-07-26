@@ -1,4 +1,4 @@
-# Vendored PocketJS renderer
+# PocketJS source provenance
 
 The PocketJS Core and ESP32-P4 PPA backend are copied from the local fork:
 
@@ -30,13 +30,15 @@ are reconciled back into the fork.
 
 PocketJS JavaScript/framework build tooling remains pinned to the base
 upstream commit so generated Vue Vapor and Solid artifacts stay reproducible.
-The vendored JSX plugin carries one component-specific resolver patch:
-external Solid applications are forced to share the pinned browser and
-universal `solid-js` modules with the framework. This avoids Bun's
-`NODE_PATH` fallback selecting the non-reactive server export without
-creating or modifying an application-side `node_modules` directory.
+It is checked out unchanged from
+`https://github.com/pocket-stack/pocketjs.git` as the `vendor/pocketjs`
+submodule. The component copies only the required toolchain directories into
+the ESP-IDF build directory, then applies an exact, fail-on-drift overlay
+there: external Solid applications are forced to share the pinned browser and
+universal `solid-js` modules with the framework. The submodule worktree itself
+remains unmodified.
 
 The ESP32-P4 C FFI, allocator, and ESP-IDF PPA driver bridge live outside the
-vendored directories. This keeps platform integration reviewable and makes a
-future upstream update a directory replacement followed by a checksum/diff
-review.
+upstream submodule. This keeps platform integration reviewable and makes a
+future upstream update an explicit gitlink change followed by a
+checksum/diff review.

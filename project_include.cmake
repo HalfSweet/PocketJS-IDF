@@ -150,11 +150,15 @@ function(pocketjs_compile_app)
     set(package "${generated_dir}/${APP_NAME}.pocket")
     set(depfile "${generated_dir}/${APP_NAME}.d")
     file(GLOB_RECURSE pocketjs_tool_sources CONFIGURE_DEPENDS
-        "${POCKETJS_IDF_COMPONENT_DIR}/vendor/pocketjs/*.ts"
-        "${POCKETJS_IDF_COMPONENT_DIR}/vendor/pocketjs/*.json"
-        "${POCKETJS_IDF_COMPONENT_DIR}/vendor/pocketjs/*.ttf"
-        "${POCKETJS_IDF_COMPONENT_DIR}/vendor/pocketjs/*.woff2"
+        "${POCKETJS_IDF_COMPONENT_DIR}/vendor/pocketjs/contracts/*.ts"
+        "${POCKETJS_IDF_COMPONENT_DIR}/vendor/pocketjs/contracts/*.json"
+        "${POCKETJS_IDF_COMPONENT_DIR}/vendor/pocketjs/framework/*.ts"
+        "${POCKETJS_IDF_COMPONENT_DIR}/vendor/pocketjs/framework/*.json"
+        "${POCKETJS_IDF_COMPONENT_DIR}/vendor/pocketjs/tools/*.ts"
+        "${POCKETJS_IDF_COMPONENT_DIR}/vendor/pocketjs/assets/fonts/*.ttf"
+        "${POCKETJS_IDF_COMPONENT_DIR}/vendor/pocketjs/assets/fonts/*.woff2"
         "${POCKETJS_IDF_COMPONENT_DIR}/vendor/pocketjs/bun.lock"
+        "${POCKETJS_IDF_COMPONENT_DIR}/vendor/pocketjs/package.json"
         "${POCKETJS_IDF_BUILD_TOOL}"
     )
     list(FILTER pocketjs_tool_sources EXCLUDE REGEX

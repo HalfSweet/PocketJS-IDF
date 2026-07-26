@@ -5,10 +5,10 @@ ESP-IDF component for ESP32-P4.
 
 > [!IMPORTANT]
 > `0.1.0-rc.1` is a planned release candidate, not a published version yet.
-> The component and its clean consumers build locally, but the required Tab5
-> visual and 960-frame hardware gates are still pending. Do not create the
-> release tag until every item in [docs/releasing.md](docs/releasing.md) is
-> complete.
+> The component and its clean consumers build locally, and all three Tab5
+> images passed the 960-frame serial gate. Human visual inspection and the
+> Registry trusted-uploader setup are still pending. Do not create the release
+> tag until every item in [docs/releasing.md](docs/releasing.md) is complete.
 
 The component owns:
 
@@ -33,6 +33,23 @@ scaling, physical framebuffers, DMA, and swap/retirement policy.
 | Raster format | RGB565 |
 | Runtime/display | one application, one runtime, one attached display |
 | Input | button bitmap and signed analog X/Y |
+
+## Clone for development
+
+The official PocketJS framework/compiler source is a Git submodule fixed to
+commit `49726ab31cf1f55f1439eb19b3b6e1ad0260ae88`:
+
+```sh
+git clone --recurse-submodules \
+  https://github.com/HalfSweet/PocketJS-IDF.git
+cd PocketJS-IDF
+git submodule update --init --recursive
+```
+
+The submodule URL is
+`https://github.com/pocket-stack/pocketjs.git`. Component packing flattens its
+required source files into the Registry archive, so Registry consumers do not
+need Git or submodule initialization.
 
 ## Add the component
 

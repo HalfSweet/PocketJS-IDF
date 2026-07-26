@@ -11,9 +11,11 @@
   `29be939` and `ec6665f`.
 - License: MIT; see `licenses/POCKETJS-MIT.txt`.
 
-The JavaScript build toolchain is stored under `vendor/pocketjs`. The
-platform-independent Rust Core and ESP32-P4 PPA backend are stored under
-`rust/`. Port-specific C wrappers are kept in `src/`.
+The official JavaScript framework/compiler source is checked out as the
+`vendor/pocketjs` submodule at the exact base commit. Component packing copies
+the required checked-out files into the Registry archive and excludes all Git
+metadata. The platform-independent Rust Core and ESP32-P4 PPA backend port are
+stored under `rust/`. Port-specific C wrappers are kept in `src/`.
 
 The two Core fixtures omitted by the original partial vendor copy are
 included byte-for-byte from upstream commit

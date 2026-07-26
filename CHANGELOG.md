@@ -11,6 +11,9 @@
 - Accept only verified `esp32p4-idf` host ABI 1 `.pocket` applications.
 - Add version-pinned QuickJS extensions for board-provided capabilities.
 - Add deterministic source compilation and prebuilt package embedding.
+- Pin the official PocketJS framework/compiler checkout as a Git submodule;
+  Registry archives contain the required flattened sources without VCS
+  metadata.
 - Add ESP-IDF 5.4.4/6.0.2, archive-consumer, and OIDC release workflows.
 
 Hardware acceptance is intentionally still pending.
