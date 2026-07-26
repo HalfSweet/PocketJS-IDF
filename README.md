@@ -151,8 +151,8 @@ The caller chooses the task, core affinity, frame rate, and watchdog delay.
 
 ## Attach a display
 
-Create an LVGL-style display object, supply one or two 128-byte-aligned
-buffers, and register a mandatory `flush` callback:
+Create a logical RGB565 display object, supply one or two caller-owned
+128-byte-aligned draw buffers, and register a mandatory `flush` callback:
 
 ```c
 pocketjs_display_t *display = NULL;

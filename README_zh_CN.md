@@ -72,8 +72,10 @@ pocketjs_compile_app(
 4. 可用 `pocketjs_detach_display()` 切回 headless；
 5. `pocketjs_destroy()` 释放运行时。
 
-显示接口采用类似 LVGL 的对象、用户 buffer、render mode 与
-flush-ready 协议，支持 `PARTIAL`、`DIRECT`、`FULL`。除 ISR 专用的
+`pocketjs_display_t` 表示逻辑 RGB565 显示器。绘制 buffer 由调用方
+提供并保持所有权；必选的 `flush` 回调负责提交像素，可通过
+`pocketjs_display_flush_ready()` 或 ISR 专用版本报告异步完成。渲染模式
+支持 `PARTIAL`、`DIRECT`、`FULL`。除
 `pocketjs_display_flush_ready_from_isr()` 外，所有 API 都必须由同一个
 owner task/core 非重入调用。
 
