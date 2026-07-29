@@ -1,11 +1,8 @@
 # PocketJS source provenance
 
 - Repository: https://github.com/pocket-stack/pocketjs
-- Downstream repository: https://github.com/HalfSweet/pocketjs
 - Commit: `a4e154789655cafa9dc0f57a8c83fc2114d74776`
-- Based on official commit:
-  `e8a8e807da7d74b98dde9cb604b6a67e6735a87b`
-- Upstream review: https://github.com/pocket-stack/pocketjs/pull/190
+- Merged review: https://github.com/pocket-stack/pocketjs/pull/190
 - Submodule path: `vendor/pocketjs`
 - License: MIT; see `licenses/POCKETJS-MIT.txt`
 

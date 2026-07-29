@@ -18,7 +18,7 @@
 ## Upstream and target constraints
 
 - PocketJS framework/tooling, Core, and ESP32-P4 PPA backend are sourced
-  directly from the `HalfSweet/pocketjs` downstream submodule pinned to
+  directly from the `pocket-stack/pocketjs` upstream submodule pinned to
   `a4e154789655cafa9dc0f57a8c83fc2114d74776`.
 - Keep the component-owned `rust/` crate limited to the C ABI, allocator, and
   ESP-IDF driver bridges. Do not copy upstream Rust crates into it.

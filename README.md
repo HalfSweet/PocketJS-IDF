@@ -36,8 +36,8 @@ scaling, physical framebuffers, DMA, and swap/retirement policy.
 
 ## Clone for development
 
-PocketJS framework, compiler, Core, and ESP32-P4 renderer source is a Git
-submodule fixed to the reviewed downstream commit
+PocketJS framework, compiler, Core, and ESP32-P4 renderer source is an
+official Git submodule fixed to the reviewed upstream commit
 `a4e154789655cafa9dc0f57a8c83fc2114d74776`:
 
 ```sh
@@ -47,9 +47,8 @@ cd PocketJS-IDF
 git submodule update --init --recursive
 ```
 
-The submodule URL is `https://github.com/HalfSweet/pocketjs.git`. The commit is
-based on official PocketJS commit
-`e8a8e807da7d74b98dde9cb604b6a67e6735a87b`; its upstream review remains
+The submodule URL is `https://github.com/pocket-stack/pocketjs.git`. The
+renderer changes were accepted through
 [pocket-stack/pocketjs#190](https://github.com/pocket-stack/pocketjs/pull/190).
 Component packing flattens the required source files into the Registry
 archive, so Registry consumers do not need Git or submodule initialization.

@@ -27,8 +27,8 @@ rejected by the Registry trusted-uploader path.
 - [x] upstream Core 100-test suite;
 - [x] upstream ESP32-P4 PPA 20-test suite and `esp-idf` feature check;
 - [x] pinned Bun frozen install and encoder tests;
-- [x] downstream PocketJS submodule can be cloned from
-  `HalfSweet/pocketjs` at
+- [x] upstream PocketJS submodule can be cloned from
+  `pocket-stack/pocketjs` at
   `a4e154789655cafa9dc0f57a8c83fc2114d74776`;
 - [x] deterministic `.pocket` generation;
 - [x] Component Manager warning-as-error pack;
