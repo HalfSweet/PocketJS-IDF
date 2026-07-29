@@ -152,6 +152,9 @@ jobs:
     needs:
       - verify-tag
       - archive-consumer
+    permissions:
+      contents: read
+      id-token: write
     runs-on: ubuntu-latest
     steps:
       - name: Check out the tagged commit
@@ -160,10 +163,9 @@ jobs:
           ref: ${{ needs.verify-tag.outputs.tag }}
           submodules: recursive
 
-      - name: Upload with the Registry API token
+      - name: Upload with GitHub OIDC
         uses: espressif/upload-components-ci-action@v2
         with:
           namespace: halfsweet
           components: "pocketjs-idf: ."
           version: ${{ needs.verify-tag.outputs.version }}
-          api_token: ${{ secrets.IDF_COMPONENTS_TOKEN }}
