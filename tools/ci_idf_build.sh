@@ -2,7 +2,7 @@
 set -euo pipefail
 
 mode="${1:-}"
-package_version="${2:-0.1.0}"
+package_version="${2:-0.1.1}"
 case "$mode" in
   prebuilt|source|archive) ;;
   *)

@@ -1,8 +1,9 @@
 # Release process
 
-`v0.1.0` is the first stable release. The maintainer explicitly approved
-publishing it on 2026-07-26 after the source migration, local release checks,
-and all three Tab5 link builds completed.
+`v0.1.1` changes only the PocketJS submodule source URL and Registry
+authentication. It keeps the exact PocketJS revision and component runtime
+code released in `v0.1.0`. The existing software and Tab5 acceptance records
+remain applicable; this release does not claim a new device run.
 
 ## Registry prerequisite
 
@@ -63,10 +64,10 @@ transaction, memory, QuickJS, IMU, or task-watchdog errors. Orientation,
 RGB565 color, rounded corners, fractional scaling, dirty regions, tearing,
 and animation continuity received maintainer visual approval on 2026-07-26.
 
-The stable source migration rebuilt all three images but was not flashed
-again because the device was unavailable. The maintainer explicitly approved
-publishing `0.1.0` with the existing device record. This document therefore
-does not claim a separate stable-tag device run.
+The `v0.1.0` source migration rebuilt all three images but was not flashed
+again because the device was unavailable. Since `v0.1.1` changes neither the
+pinned PocketJS tree nor component runtime code, it retains that acceptance
+record without claiming a separate device run.
 
 ## Tag and publish
 
@@ -75,8 +76,8 @@ After the PR is merged to `main` and every gate is checked:
 ```sh
 git switch main
 git pull --ff-only
-git tag -a v0.1.0 -m "PocketJS-IDF v0.1.0"
-git push origin v0.1.0
+git tag -a v0.1.1 -m "PocketJS-IDF v0.1.1"
+git push origin v0.1.1
 ```
 
 An existing tag can be revalidated and published without moving it:
@@ -84,7 +85,7 @@ An existing tag can be revalidated and published without moving it:
 ```sh
 gh workflow run publish.yml \
   --ref main \
-  -f tag=v0.1.0
+  -f tag=v0.1.1
 ```
 
 `publish.yml` rejects non-semver tags, lightweight tags, and commits not
@@ -99,7 +100,7 @@ After publishing, create a new project outside both repositories with:
 ```yaml
 dependencies:
   halfsweet/pocketjs-idf:
-    version: "0.1.0"
+    version: "0.1.1"
 ```
 
 Build and confirm the link and application `.bin` without an

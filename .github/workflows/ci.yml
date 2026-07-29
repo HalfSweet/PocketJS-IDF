@@ -102,9 +102,9 @@ jobs:
           mkdir -p "$pack_dir"
           compote -W component pack \
             --name pocketjs-idf \
-            --version 0.1.0 \
+            --version 0.1.1 \
             --dest-dir "$pack_dir"
-          tar -tzf "$pack_dir/pocketjs-idf_0.1.0.tgz" \
+          tar -tzf "$pack_dir/pocketjs-idf_0.1.1.tgz" \
             >"$pack_dir/archive.list"
           grep -qx \
             './vendor/pocketjs/contracts/spec/pocket-package.ts' \

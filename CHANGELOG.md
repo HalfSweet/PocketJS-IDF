@@ -1,5 +1,13 @@
 # Changelog
 
+## 0.1.1 — 2026-07-29
+
+- Source the pinned PocketJS checkout directly from the official
+  `pocket-stack/pocketjs` repository after its renderer changes were merged.
+- Keep the reviewed PocketJS commit and component runtime code unchanged.
+- Publish to the ESP Component Registry with GitHub OIDC instead of a
+  long-lived Registry API token.
+
 ## 0.1.0 — 2026-07-26
 
 - Publish the first stable ESP-IDF component release after maintainer
