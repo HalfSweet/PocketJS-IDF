@@ -1,13 +1,9 @@
 # PocketJS-IDF
 
+[简体中文](README_zh_CN.md)
+
 PocketJS runtime and RGB565 logical framebuffer management as one reusable
 ESP-IDF component for ESP32-P4.
-
-> [!IMPORTANT]
-> `0.1.1` sources the unchanged, reviewed PocketJS revision directly from the
-> official upstream repository and publishes with GitHub OIDC. The runtime and
-> display code is identical to `0.1.0`; no new device run is claimed. See
-> [docs/releasing.md](docs/releasing.md) for the release record.
 
 The component owns:
 
@@ -59,7 +55,7 @@ Add this to the consumer component's `idf_component.yml`:
 ```yaml
 dependencies:
   halfsweet/pocketjs-idf:
-    version: "0.1.1"
+    version: "^0.1"
 ```
 
 For local development, temporarily add:

@@ -1,13 +1,9 @@
 # PocketJS-IDF
 
+[English](README.md)
+
 PocketJS-IDF 是面向 ESP32-P4 的 PocketJS 运行时与 RGB565 逻辑
 framebuffer 管理组件。
-
-> [!IMPORTANT]
-> `0.1.1` 从官方上游仓库直接获取未经改动、已经评审的 PocketJS
-> 固定版本，并使用 GitHub OIDC 发布。运行时与显示代码和 `0.1.0`
-> 完全一致；本版本不声称执行过新的设备测试。发布记录参阅
-> [发布清单](docs/releasing.md)。
 
 组件负责单运行时、单 `.pocket` 应用、单逻辑显示器、脏区历史、damage
 halo、U8.4 相位对齐、分块、绘制 buffer 复用、flush transaction、PPA
@@ -27,7 +23,7 @@ halo、U8.4 相位对齐、分块、绘制 buffer 复用、flush transaction、P
 ```yaml
 dependencies:
   halfsweet/pocketjs-idf:
-    version: "0.1.1"
+    version: "^0.1"
 ```
 
 本地开发可临时增加：
