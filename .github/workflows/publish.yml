@@ -14,144 +14,156 @@ on:
 permissions:
   contents: read
 
+concurrency:
+  group: >-
+    publish-${{ github.event_name == 'workflow_dispatch' &&
+    inputs.tag || github.ref_name }}
+  cancel-in-progress: false
+
 jobs:
   verify-tag:
-    name: Verify release tag and quality gates
+    name: Verify the release tag
     runs-on: ubuntu-latest
     outputs:
-      tag: ${{ steps.version.outputs.tag }}
-      version: ${{ steps.version.outputs.version }}
+      commit: ${{ steps.tag.outputs.commit }}
+      prerelease: ${{ steps.tag.outputs.prerelease }}
+      tag: ${{ steps.tag.outputs.tag }}
     steps:
       - name: Check out the tagged commit
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           fetch-depth: 0
           fetch-tags: true
-          ref: ${{ github.event_name == 'workflow_dispatch' && inputs.tag || github.ref }}
-          submodules: recursive
+          ref: >-
+            ${{ github.event_name == 'workflow_dispatch' &&
+            inputs.tag || github.ref }}
 
       - name: Validate annotated semver tag on main
-        id: version
+        id: tag
         shell: bash
         env:
-          RELEASE_TAG: ${{ github.event_name == 'workflow_dispatch' && inputs.tag || github.ref_name }}
+          RELEASE_TAG: >-
+            ${{ github.event_name == 'workflow_dispatch' &&
+            inputs.tag || github.ref_name }}
         run: |
           tag="$RELEASE_TAG"
           semver='^v(0|[1-9][0-9]*)\.(0|[1-9][0-9]*)\.(0|[1-9][0-9]*)(-[0-9A-Za-z-]+(\.[0-9A-Za-z-]+)*)?(\+[0-9A-Za-z-]+(\.[0-9A-Za-z-]+)*)?$'
-          [[ "$tag" =~ $semver ]]
-          test "$(git cat-file -t "refs/tags/$tag")" = tag
+          if [[ ! "$tag" =~ $semver ]]; then
+            echo "release tag is not v-prefixed SemVer: $tag" >&2
+            exit 1
+          fi
+          if [[ "$(git cat-file -t "refs/tags/$tag")" != tag ]]; then
+            echo "release tag must be annotated: $tag" >&2
+            exit 1
+          fi
           tag_commit="$(git rev-list -n 1 "$tag")"
-          test "$(git rev-parse HEAD)" = "$tag_commit"
-          git fetch --no-tags \
-            origin main:refs/remotes/origin/main
-          git merge-base --is-ancestor "$tag_commit" origin/main
-          echo "tag=$tag" >>"$GITHUB_OUTPUT"
-          echo "version=${tag#v}" >>"$GITHUB_OUTPUT"
+          if [[ "$(git rev-parse HEAD)" != "$tag_commit" ]]; then
+            echo "checkout does not match release tag: $tag" >&2
+            exit 1
+          fi
+          git fetch --no-tags origin main:refs/remotes/origin/main
+          if ! git merge-base --is-ancestor \
+            "$tag_commit" \
+            refs/remotes/origin/main; then
+            echo "release tag is not in main history: $tag" >&2
+            exit 1
+          fi
+          without_build="${tag%%+*}"
+          prerelease=false
+          if [[ "$without_build" == *-* ]]; then
+            prerelease=true
+            prerelease_part="${without_build#*-}"
+            IFS=. read -r -a prerelease_identifiers \
+              <<<"$prerelease_part"
+            for identifier in "${prerelease_identifiers[@]}"; do
+              if [[ "$identifier" =~ ^[0-9]+$ &&
+                "${#identifier}" -gt 1 &&
+                "$identifier" == 0* ]]; then
+                echo \
+                  "numeric prerelease identifiers cannot have leading zeroes" \
+                  >&2
+                exit 1
+              fi
+            done
+          fi
+          {
+            echo "commit=$tag_commit"
+            echo "prerelease=$prerelease"
+            echo "tag=$tag"
+          } >>"$GITHUB_OUTPUT"
 
-      - name: Verify the pinned PocketJS submodule
-        run: >-
-          test "$(git -C vendor/pocketjs rev-parse HEAD)"
-          = a4e154789655cafa9dc0f57a8c83fc2114d74776
-
-      - name: Cache Rust and Bun dependencies
-        uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
-        with:
-          path: |
-            ~/.cargo/git
-            ~/.cargo/registry
-            ~/.bun/install/cache
-            rust/target
-            vendor/pocketjs/node_modules
-          key: release-${{ runner.os }}-${{ hashFiles('rust/Cargo.lock', 'vendor/pocketjs/engine/core/Cargo.lock', 'vendor/pocketjs/engine/backends/esp32p4-ppa/Cargo.lock', 'vendor/pocketjs/bun.lock') }}
-
-      - name: Install pinned Rust and Bun toolchains
-        run: |
-          rustup toolchain install 1.89.0 --profile minimal
-          rustup default 1.89.0
-          rustup component add rustfmt
-
-      - name: Install pinned Bun toolchain
-        uses: oven-sh/setup-bun@0c5077e51419868618aeaa5fe8019c62421857d6 # v2
-        with:
-          bun-version: 1.3.14
-
-      - name: Install compiler and Component Manager dependencies
-        run: |
-          bun install --cwd vendor/pocketjs --frozen-lockfile
-          python -m pip install \
-            --disable-pip-version-check \
-            idf-component-manager==3.0.3
-
-      - name: Re-run source and package tests
-        run: |
-          cargo fmt \
-            --manifest-path rust/Cargo.toml \
-            --package pocketjs-esp32-core \
-            -- --check
-          cargo test --manifest-path rust/Cargo.toml --workspace --locked
-          cargo test \
-            --manifest-path vendor/pocketjs/engine/core/Cargo.toml \
-            --features std \
-            --locked
-          cargo test \
-            --manifest-path vendor/pocketjs/engine/backends/esp32p4-ppa/Cargo.toml \
-            --features std \
-            --locked
-          cargo check \
-            --manifest-path vendor/pocketjs/engine/backends/esp32p4-ppa/Cargo.toml \
-            --features esp-idf \
-            --locked
-          bun test tests/pocket_package.test.ts
-          python -m unittest discover -s tests -p 'test_*.py'
-          tools/check_determinism.sh
-
-      - name: Pack the tagged component
-        run: |
-          pack_dir="$RUNNER_TEMP/pocketjs-component-pack"
-          mkdir -p "$pack_dir"
-          compote -W component pack \
-            --name pocketjs-idf \
-            --version "${{ steps.version.outputs.version }}" \
-            --dest-dir "$pack_dir"
-          test -s \
-            "$pack_dir/pocketjs-idf_${{ steps.version.outputs.version }}.tgz"
-
-  archive-consumer:
-    name: Build the tagged archive consumer
+  checks:
+    name: Run the complete CI gate
     needs: verify-tag
+    permissions:
+      contents: read
+    uses: ./.github/workflows/ci.yml
+    with:
+      checkout_ref: ${{ needs.verify-tag.outputs.tag }}
+      package_version: git
+
+  draft-release:
+    name: Prepare the draft GitHub Release
+    needs:
+      - verify-tag
+      - checks
+    permissions:
+      contents: write
     runs-on: ubuntu-latest
     steps:
       - name: Check out the tagged commit
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
+          fetch-depth: 0
+          fetch-tags: true
           ref: ${{ needs.verify-tag.outputs.tag }}
-          submodules: recursive
 
-      - name: Cache CI toolchains
-        uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
+      - name: Generate release notes
+        uses: orhun/git-cliff-action@f50e11560dce63f7c33227798f90b924471a88b5 # v4.8.0
         with:
-          path: |
-            .ci/cargo
-            .ci/rustup
-            .ci/ccache
-          key: release-idf-v6.0.2-${{ hashFiles('rust/Cargo.lock') }}
+          args: --current --strip header
+          config: cliff.toml
+          version: v2.13.1
+        env:
+          OUTPUT: release-notes.md
 
-      - name: Build from the unpacked archive
-        uses: espressif/esp-idf-ci-action@e6f5c74232b1ccd4c97ed641f1e48553853f1fd5 # v1.2.0
-        with:
-          esp_idf_version: v6.0.2
-          target: esp32p4
-          extra_docker_args: >-
-            -e CCACHE_DIR=/app/${{ github.repository }}/.ci/ccache
-          command: >-
-            bash tools/ci_idf_build.sh archive
-            ${{ needs.verify-tag.outputs.version }}
+      - name: Create or update the draft release
+        shell: bash
+        env:
+          GH_TOKEN: ${{ github.token }}
+          IS_PRERELEASE: ${{ needs.verify-tag.outputs.prerelease }}
+          RELEASE_TAG: ${{ needs.verify-tag.outputs.tag }}
+        run: |
+          release_args=(
+            --title "$RELEASE_TAG"
+            --notes-file release-notes.md
+          )
+          if [[ "$IS_PRERELEASE" == true ]]; then
+            release_args+=(--prerelease)
+          fi
+          if state="$(
+            gh release view "$RELEASE_TAG" \
+              --json isDraft \
+              --jq .isDraft \
+              2>/dev/null
+          )"; then
+            if [[ "$state" == true ]]; then
+              gh release edit "$RELEASE_TAG" "${release_args[@]}"
+            else
+              echo "public release already exists; leaving it public"
+            fi
+          else
+            gh release create "$RELEASE_TAG" \
+              --verify-tag \
+              --draft \
+              "${release_args[@]}"
+          fi
 
-  publish:
+  publish-registry:
     name: Publish to ESP Component Registry
     needs:
       - verify-tag
-      - archive-consumer
+      - draft-release
     permissions:
       contents: read
       id-token: write
@@ -160,12 +172,42 @@ jobs:
       - name: Check out the tagged commit
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
+          fetch-depth: 0
+          fetch-tags: true
           ref: ${{ needs.verify-tag.outputs.tag }}
           submodules: recursive
 
       - name: Upload with GitHub OIDC
-        uses: espressif/upload-components-ci-action@v2
+        uses: espressif/upload-components-ci-action@2ce17d73e35473317c1419dbd4f007aacb593040 # v2.2.1
         with:
-          namespace: halfsweet
+          commit_sha: ${{ needs.verify-tag.outputs.commit }}
           components: "pocketjs-idf: ."
-          version: ${{ needs.verify-tag.outputs.version }}
+          namespace: halfsweet
+          version: git
+
+  publish-release:
+    name: Publish the GitHub Release
+    needs:
+      - verify-tag
+      - publish-registry
+    permissions:
+      contents: write
+    runs-on: ubuntu-latest
+    steps:
+      - name: Publish the prepared release
+        shell: bash
+        env:
+          GH_TOKEN: ${{ github.token }}
+          IS_PRERELEASE: ${{ needs.verify-tag.outputs.prerelease }}
+          RELEASE_TAG: ${{ needs.verify-tag.outputs.tag }}
+        run: |
+          release_args=(
+            release
+            edit
+            "$RELEASE_TAG"
+            --draft=false
+          )
+          if [[ "$IS_PRERELEASE" == true ]]; then
+            release_args+=(--prerelease)
+          fi
+          gh "${release_args[@]}"

@@ -1,0 +1,51 @@
+[changelog]
+header = """
+# Changelog
+
+"""
+body = """
+{% if version %}\
+## {{ version }} - {{ timestamp | date(format="%Y-%m-%d") }}
+{% else %}\
+## Unreleased
+{% endif %}\
+{% for group, commits in commits | group_by(attribute="group") %}
+### {{ group | striptags | trim }}
+
+{% for commit in commits -%}
+- {% if commit.breaking %}**Breaking:** {% endif %}{{ commit.message | upper_first }} \
+([{{ commit.id | truncate(length=7, end="") }}](https://github.com/HalfSweet/PocketJS-IDF/commit/{{ commit.id }}))
+{% endfor %}\
+{% endfor %}
+"""
+footer = """
+{% for release in releases -%}
+{% if release.version and release.previous.version %}
+[Full changelog](https://github.com/HalfSweet/PocketJS-IDF/compare/{{ release.previous.version }}...{{ release.version }})
+{% endif -%}
+{% endfor -%}
+"""
+trim = true
+render_always = true
+
+[git]
+conventional_commits = true
+filter_unconventional = false
+split_commits = false
+protect_breaking_commits = true
+filter_commits = false
+tag_pattern = '^v[0-9]+\.[0-9]+\.[0-9]+(?:-[0-9A-Za-z-]+(?:\.[0-9A-Za-z-]+)*)?(?:\+[0-9A-Za-z-]+(?:\.[0-9A-Za-z-]+)*)?$'
+sort_commits = "oldest"
+commit_parsers = [
+  { message = '^chore\(release\)', skip = true },
+  { message = '^feat', group = '<!-- 0 -->Features' },
+  { message = '^fix', group = '<!-- 1 -->Fixes' },
+  { message = '^perf', group = '<!-- 2 -->Performance' },
+  { message = '^refactor', group = '<!-- 3 -->Changes' },
+  { message = '^build', group = '<!-- 4 -->Build' },
+  { message = '^ci', group = '<!-- 5 -->CI' },
+  { message = '^docs', group = '<!-- 6 -->Documentation' },
+  { message = '^test', group = '<!-- 7 -->Testing' },
+  { message = '^chore', group = '<!-- 8 -->Maintenance' },
+  { message = '.*', group = '<!-- 9 -->Other' },
+]
