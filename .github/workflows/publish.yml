@@ -180,6 +180,14 @@ jobs:
 
       - name: Upload with GitHub OIDC
         uses: espressif/upload-components-ci-action@2ce17d73e35473317c1419dbd4f007aacb593040 # v2.2.1
+        env:
+          # The Docker action runs from /app, so expose the mounted checkout
+          # explicitly when resolving `version: git`.
+          GIT_DIR: /github/workspace/.git
+          GIT_WORK_TREE: /github/workspace
+          GIT_CONFIG_COUNT: 1
+          GIT_CONFIG_KEY_0: safe.directory
+          GIT_CONFIG_VALUE_0: /github/workspace
         with:
           commit_sha: ${{ needs.verify-tag.outputs.commit }}
           components: "pocketjs-idf: ."
