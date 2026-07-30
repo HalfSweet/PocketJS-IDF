@@ -23,7 +23,7 @@ idf_component_register(
 
 if(NOT IDF_TARGET STREQUAL "esp32p4")
     message(FATAL_ERROR
-        "PocketJS-IDF v0.1 supports only IDF_TARGET=esp32p4."
+        "PocketJS-IDF supports only IDF_TARGET=esp32p4."
     )
 endif()
 if(DEFINED IDF_VERSION AND IDF_VERSION VERSION_LESS "5.4")

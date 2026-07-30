@@ -17,7 +17,7 @@ dependencies = [
 
 [[package]]
 name = "pocketjs-esp32-core"
-version = "0.1.1"
+version = "0.0.0"
 dependencies = [
  "pocketjs-core",
  "pocketjs-esp32p4-ppa",
