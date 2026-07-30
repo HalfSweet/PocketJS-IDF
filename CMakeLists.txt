@@ -21,9 +21,12 @@ idf_component_register(
         mbedtls
 )
 
-if(NOT IDF_TARGET STREQUAL "esp32p4")
+set(POCKETJS_SUPPORTED_TARGETS esp32p4 esp32s31)
+if(NOT IDF_TARGET IN_LIST POCKETJS_SUPPORTED_TARGETS)
+    list(JOIN POCKETJS_SUPPORTED_TARGETS ", " pocketjs_supported_targets_text)
     message(FATAL_ERROR
-        "PocketJS-IDF supports only IDF_TARGET=esp32p4."
+        "PocketJS-IDF supports only these targets: "
+        "${pocketjs_supported_targets_text}."
     )
 endif()
 if(DEFINED IDF_VERSION AND IDF_VERSION VERSION_LESS "5.4")

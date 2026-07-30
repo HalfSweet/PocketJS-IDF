@@ -13,6 +13,7 @@ tags:
   - esp32p4
 targets:
   - esp32p4
+  - esp32s31
 dependencies:
   idf: ">=5.4"
   espressif/quickjs-ng: "0.14.0"
