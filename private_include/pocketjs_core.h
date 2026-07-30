@@ -112,11 +112,7 @@ void pocketjs_core_cancel_animation(
     int32_t animation_id
 );
 void pocketjs_core_set_focus(pocketjs_core_t *core, int32_t id);
-void pocketjs_core_set_active(
-    pocketjs_core_t *core,
-    int32_t id,
-    int active
-);
+void pocketjs_core_set_active(pocketjs_core_t *core, int32_t id, int active);
 int32_t pocketjs_core_hit_test(pocketjs_core_t *core, float x, float y);
 
 int pocketjs_core_load_styles(

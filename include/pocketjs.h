@@ -40,12 +40,12 @@ typedef struct {
     size_t extension_count;
 } pocketjs_config_t;
 
-#define POCKETJS_DEFAULT_CONFIG()                                      \
-    {                                                                  \
-        .javascript_heap_limit = 12U * 1024U * 1024U,                  \
-        .javascript_stack_limit = 512U * 1024U,                        \
-        .extensions = NULL,                                            \
-        .extension_count = 0,                                          \
+#define POCKETJS_DEFAULT_CONFIG()                                              \
+    {                                                                          \
+        .javascript_heap_limit = 12U * 1024U * 1024U,                          \
+        .javascript_stack_limit = 512U * 1024U,                                \
+        .extensions = NULL,                                                    \
+        .extension_count = 0,                                                  \
     }
 
 typedef struct {

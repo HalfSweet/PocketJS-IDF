@@ -38,11 +38,8 @@ static bool rect_is_valid(
     uint32_t height
 )
 {
-    return width > 0 &&
-        height > 0 &&
-        x <= surface_width &&
-        y <= surface_height &&
-        width <= surface_width - x &&
+    return width > 0 && height > 0 && x <= surface_width &&
+        y <= surface_height && width <= surface_width - x &&
         height <= surface_height - y;
 }
 
@@ -308,13 +305,10 @@ int pocketjs_ppa_srm_psm5650_rgb565_bridge(
 {
     if (s_srm == NULL ||
         !surface_is_valid(destination, destination_pixels, width, height) ||
-        source == NULL ||
-        source_width == 0 ||
-        source_height == 0 ||
+        source == NULL || source_width == 0 || source_height == 0 ||
         (size_t)source_width > SIZE_MAX / (size_t)source_height ||
         (size_t)source_width * (size_t)source_height > SIZE_MAX / 2U ||
-        source_len <
-            (size_t)source_width * (size_t)source_height * 2U ||
+        source_len < (size_t)source_width * (size_t)source_height * 2U ||
         !rect_is_valid(
             source_width,
             source_height,
@@ -336,12 +330,10 @@ int pocketjs_ppa_srm_psm5650_rgb565_bridge(
     }
 
     const bool swaps_axes = quarter_turn == 1U || quarter_turn == 3U;
-    const uint32_t scaled_width = swaps_axes
-        ? destination_rect_height
-        : destination_rect_width;
-    const uint32_t scaled_height = swaps_axes
-        ? destination_rect_width
-        : destination_rect_height;
+    const uint32_t scaled_width =
+        swaps_axes ? destination_rect_height : destination_rect_width;
+    const uint32_t scaled_height =
+        swaps_axes ? destination_rect_width : destination_rect_height;
     float scale_x = 0.0f;
     float scale_y = 0.0f;
     if (!exact_scale(source_rect_width, scaled_width, &scale_x) ||
@@ -385,8 +377,7 @@ int pocketjs_ppa_srm_psm5650_rgb565_bridge(
         .alpha_update_mode = PPA_ALPHA_NO_CHANGE,
         .mode = PPA_TRANS_MODE_BLOCKING,
     };
-    const esp_err_t result =
-        ppa_do_scale_rotate_mirror(s_srm, &operation);
+    const esp_err_t result = ppa_do_scale_rotate_mirror(s_srm, &operation);
     if (result != ESP_OK) {
         log_operation_failure_once("SRM", result, &s_srm_error_logged);
         return 0;

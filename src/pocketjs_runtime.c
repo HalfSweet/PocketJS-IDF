@@ -57,15 +57,10 @@ static void *pocketjs_qjs_malloc(void *opaque, size_t size)
     }
 
     const size_t total = sizeof(pocketjs_alloc_header_t) + size;
-    pocketjs_alloc_header_t *header = heap_caps_malloc(
-        total,
-        MALLOC_CAP_SPIRAM | MALLOC_CAP_8BIT
-    );
+    pocketjs_alloc_header_t *header =
+        heap_caps_malloc(total, MALLOC_CAP_SPIRAM | MALLOC_CAP_8BIT);
     if (header == NULL) {
-        header = heap_caps_malloc(
-            total,
-            MALLOC_CAP_INTERNAL | MALLOC_CAP_8BIT
-        );
+        header = heap_caps_malloc(total, MALLOC_CAP_INTERNAL | MALLOC_CAP_8BIT);
     }
     if (header == NULL) {
         return NULL;
@@ -131,7 +126,12 @@ static const JSMallocFunctions POCKETJS_QJS_ALLOCATOR = {
     .js_malloc_usable_size = pocketjs_qjs_usable_size,
 };
 
-static int32_t js_arg_i32(JSContext *ctx, int argc, JSValueConst *argv, int index)
+static int32_t js_arg_i32(
+    JSContext *ctx,
+    int argc,
+    JSValueConst *argv,
+    int index
+)
 {
     int32_t value = 0;
     if (index < argc) {
@@ -140,7 +140,12 @@ static int32_t js_arg_i32(JSContext *ctx, int argc, JSValueConst *argv, int inde
     return value;
 }
 
-static uint32_t js_arg_u32(JSContext *ctx, int argc, JSValueConst *argv, int index)
+static uint32_t js_arg_u32(
+    JSContext *ctx,
+    int argc,
+    JSValueConst *argv,
+    int index
+)
 {
     uint32_t value = 0;
     if (index < argc) {
@@ -149,7 +154,12 @@ static uint32_t js_arg_u32(JSContext *ctx, int argc, JSValueConst *argv, int ind
     return value;
 }
 
-static double js_arg_f64(JSContext *ctx, int argc, JSValueConst *argv, int index)
+static double js_arg_f64(
+    JSContext *ctx,
+    int argc,
+    JSValueConst *argv,
+    int index
+)
 {
     double value = 0.0;
     if (index < argc) {
@@ -273,19 +283,18 @@ static JSValue js_set_text_common(
         return JS_EXCEPTION;
     }
 
-    int ok = replace
-        ? pocketjs_core_replace_text(
-              core_from_context(ctx),
-              js_arg_i32(ctx, argc, argv, 0),
-              (const uint8_t *)text,
-              len
-          )
-        : pocketjs_core_set_text(
-              core_from_context(ctx),
-              js_arg_i32(ctx, argc, argv, 0),
-              (const uint8_t *)text,
-              len
-          );
+    int ok = replace ? pocketjs_core_replace_text(
+                           core_from_context(ctx),
+                           js_arg_i32(ctx, argc, argv, 0),
+                           (const uint8_t *)text,
+                           len
+                       )
+                     : pocketjs_core_set_text(
+                           core_from_context(ctx),
+                           js_arg_i32(ctx, argc, argv, 0),
+                           (const uint8_t *)text,
+                           len
+                       );
     JS_FreeCString(ctx, text);
 
     if (!ok) {
@@ -548,7 +557,12 @@ static void js_set_function(
     int arity
 )
 {
-    JS_SetPropertyStr(ctx, object, name, JS_NewCFunction(ctx, function, name, arity));
+    JS_SetPropertyStr(
+        ctx,
+        object,
+        name,
+        JS_NewCFunction(ctx, function, name, arity)
+    );
 }
 
 static esp_err_t pocketjs_install_ui(
@@ -613,12 +627,7 @@ static esp_err_t pocketjs_install_ui(
     );
     JS_SetPropertyStr(ctx, ui, "__viewport", viewport);
     JS_SetPropertyStr(ctx, ui, "__platform", JS_NewString(ctx, "esp-idf"));
-    JS_SetPropertyStr(
-        ctx,
-        ui,
-        "__host",
-        JS_NewString(ctx, POCKETJS_TARGET_ID)
-    );
+    JS_SetPropertyStr(ctx, ui, "__host", JS_NewString(ctx, POCKETJS_TARGET_ID));
     JS_SetPropertyStr(
         ctx,
         ui,
@@ -631,12 +640,8 @@ static esp_err_t pocketjs_install_ui(
         return ESP_FAIL;
     }
 
-    esp_err_t result = pocketjs_package_install_assets(
-        runtime->core,
-        ctx,
-        ui,
-        package
-    );
+    esp_err_t result =
+        pocketjs_package_install_assets(runtime->core, ctx, ui, package);
     if (result != ESP_OK) {
         JS_FreeValue(ctx, ui);
         JS_FreeValue(ctx, global);
@@ -656,18 +661,8 @@ static esp_err_t pocketjs_install_ui(
         JS_FreeValue(ctx, global);
         return ESP_ERR_NO_MEM;
     }
-    const int pak_result = JS_SetPropertyStr(
-        ctx,
-        global,
-        "__pak",
-        pak
-    );
-    const int ui_result = JS_SetPropertyStr(
-        ctx,
-        global,
-        "ui",
-        ui
-    );
+    const int pak_result = JS_SetPropertyStr(ctx, global, "__pak", pak);
+    const int ui_result = JS_SetPropertyStr(ctx, global, "ui", ui);
     if (pak_result < 0 || ui_result < 0) {
         JS_FreeValue(ctx, global);
         return ESP_FAIL;
@@ -763,17 +758,11 @@ esp_err_t pocketjs_js_runtime_create(
     pocketjs_js_runtime_t **out_runtime
 )
 {
-    if (
-        owner == NULL ||
-        core == NULL ||
-        app == NULL ||
-        config == NULL ||
-        package == NULL ||
-        out_runtime == NULL ||
+    if (owner == NULL || core == NULL || app == NULL || config == NULL ||
+        package == NULL || out_runtime == NULL ||
         config->javascript_heap_limit == 0 ||
         config->javascript_stack_limit == 0 ||
-        (config->extension_count != 0 && config->extensions == NULL)
-    ) {
+        (config->extension_count != 0 && config->extensions == NULL)) {
         return ESP_ERR_INVALID_ARG;
     }
     *out_runtime = NULL;
@@ -788,10 +777,8 @@ esp_err_t pocketjs_js_runtime_create(
     runtime->extension_count = config->extension_count;
 
     if (runtime->extension_count != 0) {
-        runtime->extensions = calloc(
-            runtime->extension_count,
-            sizeof(*runtime->extensions)
-        );
+        runtime->extensions =
+            calloc(runtime->extension_count, sizeof(*runtime->extensions));
         if (runtime->extensions == NULL) {
             pocketjs_js_runtime_destroy(runtime);
             return ESP_ERR_NO_MEM;
@@ -827,11 +814,8 @@ esp_err_t pocketjs_js_runtime_create(
     JS_SetContextOpaque(runtime->ctx, runtime);
     js_std_add_helpers(runtime->ctx, 0, NULL);
 
-    esp_err_t result = pocketjs_package_validate_plan(
-        runtime->ctx,
-        app,
-        package
-    );
+    esp_err_t result =
+        pocketjs_package_validate_plan(runtime->ctx, app, package);
     if (result == ESP_OK) {
         result = pocketjs_install_ui(runtime, app, package);
     }
@@ -841,8 +825,7 @@ esp_err_t pocketjs_js_runtime_create(
     }
 
     for (size_t index = 0; index < runtime->extension_count; ++index) {
-        pocketjs_extension_context_t *extension =
-            &runtime->extensions[index];
+        pocketjs_extension_context_t *extension = &runtime->extensions[index];
         if (extension->extension.install != NULL) {
             extension->active = true;
             result = finish_extension_callback(
@@ -876,11 +859,7 @@ esp_err_t pocketjs_js_runtime_create(
     JS_FreeValue(runtime->ctx, evaluation);
 
     JSValue global = JS_GetGlobalObject(runtime->ctx);
-    runtime->frame_function = JS_GetPropertyStr(
-        runtime->ctx,
-        global,
-        "frame"
-    );
+    runtime->frame_function = JS_GetPropertyStr(runtime->ctx, global, "frame");
     JS_FreeValue(runtime->ctx, global);
     if (!JS_IsFunction(runtime->ctx, runtime->frame_function)) {
         ESP_LOGE(TAG, "Application did not install globalThis.frame");
@@ -896,9 +875,8 @@ esp_err_t pocketjs_js_runtime_create(
 
     ESP_LOGI(
         TAG,
-        "Runtime ready: target=%s ABI=%" PRIu32
-        ", viewport=%" PRIu32 "x%" PRIu32
-        ", JS heap limit=%u KiB",
+        "Runtime ready: target=%s ABI=%" PRIu32 ", viewport=%" PRIu32
+        "x%" PRIu32 ", JS heap limit=%u KiB",
         app->target_id,
         app->host_abi,
         app->logical_width,
@@ -930,12 +908,11 @@ esp_err_t pocketjs_js_runtime_run_frame(
         return ESP_ERR_INVALID_STATE;
     }
 
-    const pocketjs_input_t empty = {0};
+    const pocketjs_input_t empty = { 0 };
     const pocketjs_input_t *frame_input = input != NULL ? input : &empty;
     runtime->unhandled_rejections = 0;
     for (size_t index = 0; index < runtime->extension_count; ++index) {
-        pocketjs_extension_context_t *extension =
-            &runtime->extensions[index];
+        pocketjs_extension_context_t *extension = &runtime->extensions[index];
         if (extension->extension.before_frame != NULL) {
             extension->active = true;
             const esp_err_t result = finish_extension_callback(
@@ -985,8 +962,7 @@ void pocketjs_js_runtime_destroy(pocketjs_js_runtime_t *runtime)
         return;
     }
     if (runtime->ctx != NULL) {
-        for (size_t index = runtime->installed_extension_count;
-             index > 0;
+        for (size_t index = runtime->installed_extension_count; index > 0;
              --index) {
             pocketjs_extension_context_t *extension =
                 &runtime->extensions[index - 1U];
@@ -1034,11 +1010,8 @@ pocketjs_t *pocketjs_extension_get_runtime(
         : NULL;
 }
 
-void *pocketjs_extension_get_user_data(
-    pocketjs_extension_context_t *context
-)
+void *pocketjs_extension_get_user_data(pocketjs_extension_context_t *context)
 {
-    return context != NULL && context->active
-        ? context->extension.user_data
-        : NULL;
+    return context != NULL && context->active ? context->extension.user_data
+                                              : NULL;
 }

@@ -54,8 +54,7 @@ void pocketjs_rust_panic(void)
  * O0 deliberately prevents GCC from recognizing the implementation as a
  * popcount idiom and replacing it with a recursive call to the same symbol.
  */
-__attribute__((optimize("O0")))
-int __popcountsi2(unsigned int value)
+__attribute__((optimize("O0"))) int __popcountsi2(unsigned int value)
 {
     int count = 0;
     while (value != 0) {
@@ -65,8 +64,7 @@ int __popcountsi2(unsigned int value)
     return count;
 }
 
-__attribute__((optimize("O0")))
-int __popcountdi2(unsigned long long value)
+__attribute__((optimize("O0"))) int __popcountdi2(unsigned long long value)
 {
     int count = 0;
     while (value != 0) {

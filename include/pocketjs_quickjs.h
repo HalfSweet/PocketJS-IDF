@@ -41,9 +41,7 @@ pocketjs_t *pocketjs_extension_get_runtime(
     pocketjs_extension_context_t *context
 );
 
-void *pocketjs_extension_get_user_data(
-    pocketjs_extension_context_t *context
-);
+void *pocketjs_extension_get_user_data(pocketjs_extension_context_t *context);
 
 #ifdef __cplusplus
 }

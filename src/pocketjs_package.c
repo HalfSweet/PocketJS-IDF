@@ -42,8 +42,7 @@ static bool read_u16(
     if (!range_valid(offset, sizeof(uint16_t), size)) {
         return false;
     }
-    *value = (uint16_t)bytes[offset] |
-        ((uint16_t)bytes[offset + 1U] << 8U);
+    *value = (uint16_t)bytes[offset] | ((uint16_t)bytes[offset + 1U] << 8U);
     return true;
 }
 
@@ -57,8 +56,7 @@ static bool read_u32(
     if (!range_valid(offset, sizeof(uint32_t), size)) {
         return false;
     }
-    *value = (uint32_t)bytes[offset] |
-        ((uint32_t)bytes[offset + 1U] << 8U) |
+    *value = (uint32_t)bytes[offset] | ((uint32_t)bytes[offset + 1U] << 8U) |
         ((uint32_t)bytes[offset + 2U] << 16U) |
         ((uint32_t)bytes[offset + 3U] << 24U);
     return true;
@@ -73,21 +71,15 @@ static bool read_u64(
 {
     uint32_t low = 0;
     uint32_t high = 0;
-    if (
-        !read_u32(bytes, size, offset, &low) ||
-        !read_u32(bytes, size, offset + 4U, &high)
-    ) {
+    if (!read_u32(bytes, size, offset, &low) ||
+        !read_u32(bytes, size, offset + 4U, &high)) {
         return false;
     }
     *value = (uint64_t)low | ((uint64_t)high << 32U);
     return true;
 }
 
-static uint64_t fnv1a64_update(
-    uint64_t hash,
-    const uint8_t *bytes,
-    size_t size
-)
+static uint64_t fnv1a64_update(uint64_t hash, const uint8_t *bytes, size_t size)
 {
     for (size_t index = 0; index < size; ++index) {
         hash ^= bytes[index];
@@ -114,16 +106,12 @@ esp_err_t pocketjs_package_open(
     pocketjs_package_view_t *out_view
 )
 {
-    if (
-        app == NULL ||
-        out_view == NULL ||
-        app->package_data == NULL ||
+    if (app == NULL || out_view == NULL || app->package_data == NULL ||
         app->package_size < POCKET_HEADER_SIZE + sizeof(uint64_t) ||
-        app->target_id == NULL
-    ) {
+        app->target_id == NULL) {
         return ESP_ERR_INVALID_ARG;
     }
-    *out_view = (pocketjs_package_view_t) {0};
+    *out_view = (pocketjs_package_view_t){ 0 };
 
     const uint8_t *bytes = app->package_data;
     const size_t size = app->package_size;
@@ -131,23 +119,17 @@ esp_err_t pocketjs_package_open(
     uint32_t version = 0;
     uint32_t manifest_size = 0;
     uint32_t variant_count = 0;
-    if (
-        !read_u32(bytes, size, 0, &magic) ||
+    if (!read_u32(bytes, size, 0, &magic) ||
         !read_u32(bytes, size, 4, &version) ||
         !read_u32(bytes, size, 8, &manifest_size) ||
-        !read_u32(bytes, size, 12, &variant_count) ||
-        magic != POCKET_MAGIC ||
-        version != POCKET_VERSION ||
-        variant_count == 0
-    ) {
+        !read_u32(bytes, size, 12, &variant_count) || magic != POCKET_MAGIC ||
+        version != POCKET_VERSION || variant_count == 0) {
         return ESP_ERR_INVALID_VERSION;
     }
 
     uint64_t stored_hash = 0;
-    if (
-        !read_u64(bytes, size, size - sizeof(uint64_t), &stored_hash) ||
-        stored_hash != fnv1a64(bytes, size - sizeof(uint64_t))
-    ) {
+    if (!read_u64(bytes, size, size - sizeof(uint64_t), &stored_hash) ||
+        stored_hash != fnv1a64(bytes, size - sizeof(uint64_t))) {
         ESP_LOGE(TAG, ".pocket footer hash mismatch");
         return ESP_ERR_INVALID_CRC;
     }
@@ -157,15 +139,13 @@ esp_err_t pocketjs_package_open(
     }
     const size_t variant_table =
         align16(POCKET_HEADER_SIZE + (size_t)manifest_size);
-    if (
-        variant_table == SIZE_MAX ||
+    if (variant_table == SIZE_MAX ||
         variant_count > SIZE_MAX / POCKET_VARIANT_SIZE ||
         !range_valid(
             variant_table,
             (size_t)variant_count * POCKET_VARIANT_SIZE,
             size
-        )
-    ) {
+        )) {
         return ESP_ERR_INVALID_SIZE;
     }
 
@@ -177,17 +157,13 @@ esp_err_t pocketjs_package_open(
         const size_t entry =
             variant_table + (size_t)index * POCKET_VARIANT_SIZE;
         size_t target_length = 0;
-        while (
-            target_length < POCKET_TARGET_BYTES &&
-            bytes[entry + target_length] != 0
-        ) {
+        while (target_length < POCKET_TARGET_BYTES &&
+               bytes[entry + target_length] != 0) {
             ++target_length;
         }
-        if (
-            target_length == POCKET_TARGET_BYTES ||
+        if (target_length == POCKET_TARGET_BYTES ||
             strlen(app->target_id) != target_length ||
-            memcmp(bytes + entry, app->target_id, target_length) != 0
-        ) {
+            memcmp(bytes + entry, app->target_id, target_length) != 0) {
             continue;
         }
 
@@ -195,25 +171,21 @@ esp_err_t pocketjs_package_open(
         uint32_t section_count = 0;
         uint32_t sections_offset = 0;
         uint64_t variant_hash = 0;
-        if (
-            !read_u32(bytes, size, entry + 16U, &host_abi) ||
+        if (!read_u32(bytes, size, entry + 16U, &host_abi) ||
             !read_u32(bytes, size, entry + 20U, &section_count) ||
             !read_u32(bytes, size, entry + 24U, &sections_offset) ||
             !read_u64(bytes, size, entry + 32U, &variant_hash) ||
-            host_abi != app->host_abi ||
-            section_count == 0 ||
+            host_abi != app->host_abi || section_count == 0 ||
             section_count > SIZE_MAX / POCKET_SECTION_SIZE ||
             !range_valid(
                 sections_offset,
                 (size_t)section_count * POCKET_SECTION_SIZE,
                 size
-            )
-        ) {
+            )) {
             return ESP_ERR_INVALID_RESPONSE;
         }
 
-        uint64_t computed_variant_hash =
-            UINT64_C(0xcbf29ce484222325);
+        uint64_t computed_variant_hash = UINT64_C(0xcbf29ce484222325);
         uint32_t previous_kind = 0;
         for (uint32_t section = 0; section < section_count; ++section) {
             const size_t section_entry =
@@ -221,24 +193,18 @@ esp_err_t pocketjs_package_open(
             uint32_t kind = 0;
             uint32_t offset = 0;
             uint32_t length = 0;
-            if (
-                !read_u32(bytes, size, section_entry, &kind) ||
+            if (!read_u32(bytes, size, section_entry, &kind) ||
                 !read_u32(bytes, size, section_entry + 8U, &offset) ||
                 !read_u32(bytes, size, section_entry + 12U, &length) ||
-                kind == 0 ||
-                (section != 0 && kind <= previous_kind) ||
-                !range_valid(offset, length, size - sizeof(uint64_t))
-            ) {
+                kind == 0 || (section != 0 && kind <= previous_kind) ||
+                !range_valid(offset, length, size - sizeof(uint64_t))) {
                 return ESP_ERR_INVALID_RESPONSE;
             }
             previous_kind = kind;
 
             const uint8_t *payload = bytes + offset;
-            computed_variant_hash = fnv1a64_update(
-                computed_variant_hash,
-                payload,
-                length
-            );
+            computed_variant_hash =
+                fnv1a64_update(computed_variant_hash, payload, length);
             switch (kind) {
             case POCKET_SECTION_IDENTITY:
                 out_view->identity = payload;
@@ -271,15 +237,10 @@ esp_err_t pocketjs_package_open(
     if (!found) {
         return ESP_ERR_NOT_FOUND;
     }
-    if (
-        out_view->plan == NULL ||
-        out_view->plan_size == 0 ||
-        out_view->javascript == NULL ||
-        out_view->javascript_size < 2 ||
+    if (out_view->plan == NULL || out_view->plan_size == 0 ||
+        out_view->javascript == NULL || out_view->javascript_size < 2 ||
         out_view->javascript[out_view->javascript_size - 1U] != 0 ||
-        out_view->pak == NULL ||
-        out_view->pak_size == 0
-    ) {
+        out_view->pak == NULL || out_view->pak_size == 0) {
         return ESP_ERR_INVALID_RESPONSE;
     }
     return ESP_OK;
@@ -294,8 +255,7 @@ static bool js_read_u32(
 {
     JSValue value = JS_GetPropertyStr(context, object, name);
     const bool ok =
-        !JS_IsException(value) &&
-        JS_ToUint32(context, out, value) == 0;
+        !JS_IsException(value) && JS_ToUint32(context, out, value) == 0;
     JS_FreeValue(context, value);
     return ok;
 }
@@ -333,13 +293,8 @@ static bool validate_plan_hash(JSContext *context, JSValueConst plan)
     }
 
     JSValue argument = JS_DupValue(context, plan);
-    JSValue result = JS_Call(
-        context,
-        canonicalizer,
-        JS_UNDEFINED,
-        1,
-        &argument
-    );
+    JSValue result =
+        JS_Call(context, canonicalizer, JS_UNDEFINED, 1, &argument);
     JS_FreeValue(context, argument);
     JS_FreeValue(context, canonicalizer);
     if (JS_IsException(result)) {
@@ -353,27 +308,16 @@ static bool validate_plan_hash(JSContext *context, JSValueConst plan)
     JSValue canonical_value = JS_GetPropertyUint32(context, result, 1);
     size_t expected_size = 0;
     size_t canonical_size = 0;
-    const char *expected = JS_ToCStringLen(
-        context,
-        &expected_size,
-        expected_value
-    );
-    const char *canonical = JS_ToCStringLen(
-        context,
-        &canonical_size,
-        canonical_value
-    );
+    const char *expected =
+        JS_ToCStringLen(context, &expected_size, expected_value);
+    const char *canonical =
+        JS_ToCStringLen(context, &canonical_size, canonical_value);
     bool valid = false;
-    if (
-        expected != NULL &&
-        canonical != NULL &&
-        expected_size == 71U &&
-        memcmp(expected, "sha256:", 7U) == 0
-    ) {
-        uint8_t digest[32] = {0};
+    if (expected != NULL && canonical != NULL && expected_size == 71U &&
+        memcmp(expected, "sha256:", 7U) == 0) {
+        uint8_t digest[32] = { 0 };
         size_t digest_size = 0;
-        if (
-            psa_crypto_init() == PSA_SUCCESS &&
+        if (psa_crypto_init() == PSA_SUCCESS &&
             psa_hash_compute(
                 PSA_ALG_SHA_256,
                 (const uint8_t *)canonical,
@@ -382,8 +326,7 @@ static bool validate_plan_hash(JSContext *context, JSValueConst plan)
                 sizeof(digest),
                 &digest_size
             ) == PSA_SUCCESS &&
-            digest_size == sizeof(digest)
-        ) {
+            digest_size == sizeof(digest)) {
             static const char hex[] = "0123456789abcdef";
             char actual[72] = "sha256:";
             for (size_t index = 0; index < sizeof(digest); ++index) {
@@ -425,12 +368,8 @@ esp_err_t pocketjs_package_validate_plan(
     }
     memcpy(json, view->plan, view->plan_size);
     json[view->plan_size] = '\0';
-    JSValue plan = JS_ParseJSON(
-        context,
-        json,
-        view->plan_size,
-        "<pocket-plan>"
-    );
+    JSValue plan =
+        JS_ParseJSON(context, json, view->plan_size, "<pocket-plan>");
     free(json);
     if (JS_IsException(plan)) {
         return ESP_ERR_INVALID_RESPONSE;
@@ -445,12 +384,9 @@ esp_err_t pocketjs_package_validate_plan(
     JSValue target_id = JS_GetPropertyStr(context, target, "id");
     const char *target_text = JS_ToCString(context, target_id);
     uint32_t host_abi = 0;
-    if (
-        target_text == NULL ||
-        strcmp(target_text, app->target_id) != 0 ||
+    if (target_text == NULL || strcmp(target_text, app->target_id) != 0 ||
         !js_read_u32(context, target, "hostAbi", &host_abi) ||
-        host_abi != app->host_abi
-    ) {
+        host_abi != app->host_abi) {
         goto cleanup_target;
     }
 
@@ -461,14 +397,11 @@ esp_err_t pocketjs_package_validate_plan(
     uint32_t width = 0;
     uint32_t height = 0;
     uint32_t density = 0;
-    if (
-        JS_ToUint32(context, &width, logical_width) == 0 &&
+    if (JS_ToUint32(context, &width, logical_width) == 0 &&
         JS_ToUint32(context, &height, logical_height) == 0 &&
         js_read_u32(context, viewport, "rasterDensity", &density) &&
-        width == app->logical_width &&
-        height == app->logical_height &&
-        density == app->raster_density
-    ) {
+        width == app->logical_width && height == app->logical_height &&
+        density == app->raster_density) {
         result = ESP_OK;
     }
     JS_FreeValue(context, logical_height);
@@ -524,20 +457,15 @@ esp_err_t pocketjs_package_install_assets(
     uint32_t directory = 0;
     uint32_t names = 0;
     uint32_t declared_size = 0;
-    if (
-        pak_size < PAK_HEADER_SIZE ||
-        !read_u32(pak, pak_size, 0, &magic) ||
+    if (pak_size < PAK_HEADER_SIZE || !read_u32(pak, pak_size, 0, &magic) ||
         !read_u16(pak, pak_size, 4, &version) ||
         !read_u32(pak, pak_size, 8, &count) ||
         !read_u32(pak, pak_size, 12, &directory) ||
         !read_u32(pak, pak_size, 16, &names) ||
-        !read_u32(pak, pak_size, 24, &declared_size) ||
-        magic != PAK_MAGIC ||
-        version != PAK_VERSION ||
-        declared_size != pak_size ||
+        !read_u32(pak, pak_size, 24, &declared_size) || magic != PAK_MAGIC ||
+        version != PAK_VERSION || declared_size != pak_size ||
         count > SIZE_MAX / PAK_ENTRY_SIZE ||
-        !range_valid(directory, (size_t)count * PAK_ENTRY_SIZE, pak_size)
-    ) {
+        !range_valid(directory, (size_t)count * PAK_ENTRY_SIZE, pak_size)) {
         return ESP_ERR_INVALID_RESPONSE;
     }
 
@@ -556,14 +484,12 @@ esp_err_t pocketjs_package_install_assets(
         uint32_t blob_size = 0;
         uint32_t name_offset = 0;
         uint16_t name_size = 0;
-        if (
-            !read_u32(pak, pak_size, entry + 4U, &blob_offset) ||
+        if (!read_u32(pak, pak_size, entry + 4U, &blob_offset) ||
             !read_u32(pak, pak_size, entry + 8U, &blob_size) ||
             !read_u32(pak, pak_size, entry + 12U, &name_offset) ||
             !read_u16(pak, pak_size, entry + 16U, &name_size) ||
             !range_valid(blob_offset, blob_size, pak_size) ||
-            !range_valid((size_t)names + name_offset, name_size, pak_size)
-        ) {
+            !range_valid((size_t)names + name_offset, name_size, pak_size)) {
             result = ESP_ERR_INVALID_RESPONSE;
             break;
         }
@@ -574,24 +500,15 @@ esp_err_t pocketjs_package_install_assets(
             if (!pocketjs_core_load_styles(core, blob, blob_size)) {
                 result = ESP_ERR_INVALID_RESPONSE;
             }
-        } else if (
-            name_size > 8U &&
-            memcmp(name, "ui:font.", 8U) == 0
-        ) {
+        } else if (name_size > 8U && memcmp(name, "ui:font.", 8U) == 0) {
             if (!pocketjs_core_load_font_atlas(core, blob, blob_size)) {
                 result = ESP_ERR_INVALID_RESPONSE;
             }
-        } else if (
-            name_size > 7U &&
-            memcmp(name, "ui:img.", 7U) == 0
-        ) {
+        } else if (name_size > 7U && memcmp(name, "ui:img.", 7U) == 0) {
             uint16_t width = 0;
             uint16_t height = 0;
-            if (
-                blob_size < 8U ||
-                !read_u16(blob, blob_size, 0, &width) ||
-                !read_u16(blob, blob_size, 2, &height)
-            ) {
+            if (blob_size < 8U || !read_u16(blob, blob_size, 0, &width) ||
+                !read_u16(blob, blob_size, 2, &height)) {
                 result = ESP_ERR_INVALID_RESPONSE;
                 break;
             }
@@ -614,23 +531,17 @@ esp_err_t pocketjs_package_install_assets(
                 name_size - 7U,
                 JS_NewInt32(context, handle)
             );
-        } else if (
-            name_size > 10U &&
-            memcmp(name, "ui:sprite.", 10U) == 0
-        ) {
+        } else if (name_size > 10U && memcmp(name, "ui:sprite.", 10U) == 0) {
             uint16_t width = 0;
             uint16_t height = 0;
             uint16_t frames = 0;
             uint16_t columns = 0;
             uint16_t step = 0;
-            if (
-                blob_size < 16U ||
-                !read_u16(blob, blob_size, 0, &width) ||
+            if (blob_size < 16U || !read_u16(blob, blob_size, 0, &width) ||
                 !read_u16(blob, blob_size, 2, &height) ||
                 !read_u16(blob, blob_size, 6, &frames) ||
                 !read_u16(blob, blob_size, 8, &columns) ||
-                !read_u16(blob, blob_size, 10, &step)
-            ) {
+                !read_u16(blob, blob_size, 10, &step)) {
                 result = ESP_ERR_INVALID_RESPONSE;
                 break;
             }
@@ -675,12 +586,8 @@ esp_err_t pocketjs_package_install_assets(
                 "step",
                 JS_NewUint32(context, step)
             );
-            if (
-                handle_result < 0 ||
-                frames_result < 0 ||
-                columns_result < 0 ||
-                step_result < 0
-            ) {
+            if (handle_result < 0 || frames_result < 0 || columns_result < 0 ||
+                step_result < 0) {
                 JS_FreeValue(context, metadata);
                 result = ESP_FAIL;
             } else {
@@ -696,18 +603,10 @@ esp_err_t pocketjs_package_install_assets(
     }
 
     if (result == ESP_OK) {
-        const int textures_result = JS_SetPropertyStr(
-            context,
-            ui,
-            "__textures",
-            textures
-        );
-        const int sprites_result = JS_SetPropertyStr(
-            context,
-            ui,
-            "__sprites",
-            sprites
-        );
+        const int textures_result =
+            JS_SetPropertyStr(context, ui, "__textures", textures);
+        const int sprites_result =
+            JS_SetPropertyStr(context, ui, "__sprites", sprites);
         if (textures_result < 0 || sprites_result < 0) {
             result = ESP_FAIL;
         }

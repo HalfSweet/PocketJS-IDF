@@ -82,10 +82,7 @@ static void drain_completion(pocketjs_display_t *display)
     }
 }
 
-static esp_err_t wait_for_flush(
-    pocketjs_display_t *display,
-    uint32_t *wait_us
-)
+static esp_err_t wait_for_flush(pocketjs_display_t *display, uint32_t *wait_us)
 {
     if (!display->flush_inflight) {
         return ESP_OK;
@@ -147,11 +144,8 @@ static esp_err_t submit_flush(
     atomic_store_explicit(&display->awaiting_ready, true, memory_order_release);
     display->flush_inflight = true;
 
-    const esp_err_t result = display->callbacks.flush(
-        display,
-        flush,
-        display->callback_user_data
-    );
+    const esp_err_t result =
+        display->callbacks.flush(display, flush, display->callback_user_data);
     if (result != ESP_OK) {
         atomic_store_explicit(
             &display->awaiting_ready,
@@ -179,7 +173,7 @@ static pocketjs_display_area_t aligned_damage_area(
         ? damage->y + damage->height + 1U
         : display->height;
 
-    return (pocketjs_display_area_t) {
+    return (pocketjs_display_area_t){
         .x1 = align_down(x1, frame->x_alignment),
         .y1 = align_down(y1, frame->y_alignment),
         .x2 = align_up_clamped(x2, frame->x_alignment, display->width),
@@ -192,10 +186,8 @@ static bool damage_areas_touch(
     const pocketjs_display_area_t *right
 )
 {
-    return left->x1 <= right->x2 &&
-        right->x1 <= left->x2 &&
-        left->y1 <= right->y2 &&
-        right->y1 <= left->y2;
+    return left->x1 <= right->x2 && right->x1 <= left->x2 &&
+        left->y1 <= right->y2 && right->y1 <= left->y2;
 }
 
 static pocketjs_display_area_t damage_area_union(
@@ -203,7 +195,7 @@ static pocketjs_display_area_t damage_area_union(
     const pocketjs_display_area_t *right
 )
 {
-    return (pocketjs_display_area_t) {
+    return (pocketjs_display_area_t){
         .x1 = left->x1 < right->x1 ? left->x1 : right->x1,
         .y1 = left->y1 < right->y1 ? left->y1 : right->y1,
         .x2 = left->x2 > right->x2 ? left->x2 : right->x2,
@@ -242,10 +234,8 @@ static void aligned_damage_sort(aligned_damage_t *damage)
         while (insert > 0) {
             const pocketjs_display_area_t *previous =
                 &damage->regions[insert - 1U];
-            if (
-                previous->y1 < value.y1 ||
-                (previous->y1 == value.y1 && previous->x1 <= value.x1)
-            ) {
+            if (previous->y1 < value.y1 ||
+                (previous->y1 == value.y1 && previous->x1 <= value.x1)) {
                 break;
             }
             damage->regions[insert] = *previous;
@@ -262,36 +252,24 @@ static bool build_aligned_damage(
     aligned_damage_t *out_damage
 )
 {
-    if (
-        plan->region_count > POCKETJS_MAX_DAMAGE_REGIONS ||
-        out_damage == NULL
-    ) {
+    if (plan->region_count > POCKETJS_MAX_DAMAGE_REGIONS ||
+        out_damage == NULL) {
         return false;
     }
 
-    *out_damage = (aligned_damage_t) {0};
+    *out_damage = (aligned_damage_t){ 0 };
     for (uint32_t index = 0; index < plan->region_count; ++index) {
         const pocketjs_damage_rect_t *source = &plan->regions[index];
-        if (
-            source->width == 0 ||
-            source->height == 0 ||
-            source->x >= display->width ||
-            source->y >= display->height ||
+        if (source->width == 0 || source->height == 0 ||
+            source->x >= display->width || source->y >= display->height ||
             source->width > display->width - source->x ||
-            source->height > display->height - source->y
-        ) {
+            source->height > display->height - source->y) {
             return false;
         }
-        const pocketjs_display_area_t area = aligned_damage_area(
-            display,
-            source,
-            frame
-        );
-        if (
-            area.x1 >= area.x2 ||
-            area.y1 >= area.y2 ||
-            !aligned_damage_add(out_damage, area)
-        ) {
+        const pocketjs_display_area_t area =
+            aligned_damage_area(display, source, frame);
+        if (area.x1 >= area.x2 || area.y1 >= area.y2 ||
+            !aligned_damage_add(out_damage, area)) {
             return false;
         }
     }
@@ -310,7 +288,7 @@ static esp_err_t render_transaction(
 )
 {
     *out_stats = *plan_stats;
-    aligned_damage_t damage = {0};
+    aligned_damage_t damage = { 0 };
     if (!build_aligned_damage(display, plan, frame, &damage)) {
         return ESP_ERR_INVALID_RESPONSE;
     }
@@ -329,38 +307,29 @@ static esp_err_t render_transaction(
 
     uint32_t buffer_index = display->next_buffer;
     if (display->mode == POCKETJS_DISPLAY_RENDER_MODE_DIRECT) {
-        buffer_index = display->buffer_count == 1U
-            ? 0
-            : frame->back_target_id;
+        buffer_index = display->buffer_count == 1U ? 0 : frame->back_target_id;
         if (buffer_index >= display->buffer_count) {
             return ESP_ERR_INVALID_RESPONSE;
         }
     }
-    for (uint32_t region_index = 0;
-         region_index < damage.count;
+    for (uint32_t region_index = 0; region_index < damage.count;
          ++region_index) {
-        const pocketjs_display_area_t area =
-            damage.regions[region_index];
+        const pocketjs_display_area_t area = damage.regions[region_index];
 
         for (uint32_t y = area.y1; y < area.y2;) {
             uint32_t chunk_height = area.y2 - y;
             if (chunk_height > max_rows) {
                 chunk_height = max_rows;
             }
-            if (
-                y + chunk_height < area.y2 &&
-                frame->y_alignment > 1U
-            ) {
+            if (y + chunk_height < area.y2 && frame->y_alignment > 1U) {
                 chunk_height = align_down(chunk_height, frame->y_alignment);
             }
             if (chunk_height == 0) {
                 return ESP_ERR_INVALID_SIZE;
             }
 
-            if (
-                display->buffer_count == 1U ||
-                display->mode == POCKETJS_DISPLAY_RENDER_MODE_DIRECT
-            ) {
+            if (display->buffer_count == 1U ||
+                display->mode == POCKETJS_DISPLAY_RENDER_MODE_DIRECT) {
                 const esp_err_t wait_result =
                     wait_for_flush(display, flush_wait_us);
                 if (wait_result != ESP_OK) {
@@ -375,7 +344,7 @@ static esp_err_t render_transaction(
                 render_base += (size_t)y * display->width;
             }
 
-            pocketjs_render_stats_t strip_stats = {0};
+            pocketjs_render_stats_t strip_stats = { 0 };
             if (!pocketjs_core_render_rgb565_strip(
                     core,
                     render_base,
@@ -396,11 +365,9 @@ static esp_err_t render_transaction(
                 return wait_result;
             }
 
-            const bool last =
-                region_index + 1U == damage.count &&
+            const bool last = region_index + 1U == damage.count &&
                 y + chunk_height == area.y2;
-            const uint16_t *map_pixels =
-                render_base + area.x1;
+            const uint16_t *map_pixels = render_base + area.x1;
             const pocketjs_display_flush_t flush = {
                 .area = {
                     .x1 = area.x1,
@@ -409,8 +376,7 @@ static esp_err_t render_transaction(
                     .y2 = y + chunk_height,
                 },
                 .pixels = map_pixels,
-                .size_bytes =
-                    (chunk_height - 1U) * row_bytes +
+                .size_bytes = (chunk_height - 1U) * row_bytes +
                     (area.x2 - area.x1) * sizeof(uint16_t),
                 .stride_bytes = row_bytes,
                 .format = POCKETJS_PIXEL_FORMAT_RGB565,
@@ -423,8 +389,7 @@ static esp_err_t render_transaction(
             }
 
             if (display->mode == POCKETJS_DISPLAY_RENDER_MODE_PARTIAL) {
-                buffer_index = (buffer_index + 1U) %
-                    display->buffer_count;
+                buffer_index = (buffer_index + 1U) % display->buffer_count;
             }
             y += chunk_height;
         }
@@ -450,8 +415,8 @@ static esp_err_t render_damage_frame(
 )
 {
     *out_present = false;
-    pocketjs_damage_plan_t front_plan = {0};
-    pocketjs_render_stats_t front_stats = {0};
+    pocketjs_damage_plan_t front_plan = { 0 };
+    pocketjs_render_stats_t front_stats = { 0 };
     if (!pocketjs_core_prepare_rgb565_frame(
             core,
             frame->front_target_id,
@@ -474,8 +439,8 @@ static esp_err_t render_damage_frame(
         return ESP_FAIL;
     }
 
-    pocketjs_damage_plan_t back_plan = {0};
-    pocketjs_render_stats_t back_stats = {0};
+    pocketjs_damage_plan_t back_plan = { 0 };
+    pocketjs_render_stats_t back_stats = { 0 };
     if (!pocketjs_core_prepare_rgb565_frame(
             core,
             frame->back_target_id,
@@ -548,8 +513,7 @@ static esp_err_t render_full_frame(
         result = wait_for_flush(display, flush_wait_us);
     }
     if (result == ESP_OK) {
-        display->next_buffer =
-            (buffer_index + 1U) % display->buffer_count;
+        display->next_buffer = (buffer_index + 1U) % display->buffer_count;
     }
     return result;
 }
@@ -592,44 +556,28 @@ esp_err_t pocketjs_display_set_buffers(
     pocketjs_display_render_mode_t mode
 )
 {
-    if (
-        display == NULL ||
-        buffer1 == NULL ||
-        mode > POCKETJS_DISPLAY_RENDER_MODE_FULL
-    ) {
+    if (display == NULL || buffer1 == NULL ||
+        mode > POCKETJS_DISPLAY_RENDER_MODE_FULL) {
         return ESP_ERR_INVALID_ARG;
     }
-    if (
-        !display_is_owner(display) ||
-        display->attached ||
-        display->busy
-    ) {
+    if (!display_is_owner(display) || display->attached || display->busy) {
         return ESP_ERR_INVALID_STATE;
     }
-    if (
-        ((uintptr_t)buffer1 % POCKETJS_DRAW_BUFFER_ALIGNMENT) != 0 ||
-        (
-            buffer2 != NULL &&
-            ((uintptr_t)buffer2 % POCKETJS_DRAW_BUFFER_ALIGNMENT) != 0
-        )
-    ) {
+    if (((uintptr_t)buffer1 % POCKETJS_DRAW_BUFFER_ALIGNMENT) != 0 ||
+        (buffer2 != NULL &&
+         ((uintptr_t)buffer2 % POCKETJS_DRAW_BUFFER_ALIGNMENT) != 0)) {
         return ESP_ERR_INVALID_ARG;
     }
 
-    if (
-        display->width > SIZE_MAX / sizeof(uint16_t) ||
+    if (display->width > SIZE_MAX / sizeof(uint16_t) ||
         display->height >
-            SIZE_MAX / ((size_t)display->width * sizeof(uint16_t))
-    ) {
+            SIZE_MAX / ((size_t)display->width * sizeof(uint16_t))) {
         return ESP_ERR_INVALID_SIZE;
     }
-    const size_t row_bytes =
-        (size_t)display->width * sizeof(uint16_t);
+    const size_t row_bytes = (size_t)display->width * sizeof(uint16_t);
     const size_t frame_bytes = row_bytes * display->height;
     const size_t required =
-        mode == POCKETJS_DISPLAY_RENDER_MODE_PARTIAL
-        ? row_bytes
-        : frame_bytes;
+        mode == POCKETJS_DISPLAY_RENDER_MODE_PARTIAL ? row_bytes : frame_bytes;
     if (buffer_size_bytes < required || buffer_size_bytes % sizeof(uint16_t)) {
         return ESP_ERR_INVALID_SIZE;
     }
@@ -651,25 +599,15 @@ esp_err_t pocketjs_display_set_callbacks(
     uint32_t flush_timeout_ms
 )
 {
-    if (
-        display == NULL ||
-        callbacks == NULL ||
-        callbacks->flush == NULL
-    ) {
+    if (display == NULL || callbacks == NULL || callbacks->flush == NULL) {
         return ESP_ERR_INVALID_ARG;
     }
-    if (
-        !display_is_owner(display) ||
-        display->attached ||
-        display->busy
-    ) {
+    if (!display_is_owner(display) || display->attached || display->busy) {
         return ESP_ERR_INVALID_STATE;
     }
     const bool has_begin = callbacks->begin_frame != NULL;
-    if (
-        has_begin != (callbacks->end_frame != NULL) ||
-        has_begin != (callbacks->abort_frame != NULL)
-    ) {
+    if (has_begin != (callbacks->end_frame != NULL) ||
+        has_begin != (callbacks->abort_frame != NULL)) {
         return ESP_ERR_INVALID_ARG;
     }
     display->callbacks = *callbacks;
@@ -704,9 +642,7 @@ esp_err_t pocketjs_display_flush_ready(
         status,
         memory_order_release
     );
-    return xSemaphoreGive(display->completion) == pdTRUE
-        ? ESP_OK
-        : ESP_FAIL;
+    return xSemaphoreGive(display->completion) == pdTRUE ? ESP_OK : ESP_FAIL;
 }
 
 esp_err_t pocketjs_display_flush_ready_from_isr(
@@ -753,20 +689,14 @@ pocketjs_display_render_mode_t pocketjs_display_get_render_mode(
     const pocketjs_display_t *display
 )
 {
-    return display != NULL
-        ? display->mode
-        : POCKETJS_DISPLAY_RENDER_MODE_PARTIAL;
+    return display != NULL ? display->mode
+                           : POCKETJS_DISPLAY_RENDER_MODE_PARTIAL;
 }
 
 esp_err_t pocketjs_display_attach_internal(pocketjs_display_t *display)
 {
-    if (
-        display == NULL ||
-        !display_is_owner(display) ||
-        display->attached ||
-        !display->buffers_configured ||
-        !display->callbacks_configured
-    ) {
+    if (display == NULL || !display_is_owner(display) || display->attached ||
+        !display->buffers_configured || !display->callbacks_configured) {
         return ESP_ERR_INVALID_STATE;
     }
     display->attached = true;
@@ -787,58 +717,43 @@ esp_err_t pocketjs_display_render_internal(
     uint32_t *out_flush_wait_us
 )
 {
-    if (
-        display == NULL ||
-        core == NULL ||
-        out_stats == NULL ||
-        !display->attached ||
-        display->busy
-    ) {
+    if (display == NULL || core == NULL || out_stats == NULL ||
+        !display->attached || display->busy) {
         return ESP_ERR_INVALID_STATE;
     }
 
     display->busy = true;
-    *out_stats = (pocketjs_render_stats_t) {0};
+    *out_stats = (pocketjs_render_stats_t){ 0 };
     if (out_flush_wait_us != NULL) {
         *out_flush_wait_us = 0;
     }
 
     pocketjs_display_frame_info_t frame = {
         .front_target_id = 0,
-        .back_target_id =
-            display->mode == POCKETJS_DISPLAY_RENDER_MODE_DIRECT
+        .back_target_id = display->mode == POCKETJS_DISPLAY_RENDER_MODE_DIRECT
             ? display->next_buffer
             : 0,
         .x_alignment = 1,
         .y_alignment = 1,
     };
-    if (
-        display->callbacks.begin_frame == NULL &&
+    if (display->callbacks.begin_frame == NULL &&
         display->mode == POCKETJS_DISPLAY_RENDER_MODE_DIRECT &&
-        display->buffer_count == 2U
-    ) {
+        display->buffer_count == 2U) {
         frame.front_target_id = frame.back_target_id ^ 1U;
     }
     bool present = display->mode == POCKETJS_DISPLAY_RENDER_MODE_FULL;
     bool frame_started = display->callbacks.begin_frame == NULL;
     esp_err_t result = ESP_OK;
     if (display->callbacks.begin_frame != NULL) {
-        result = display->callbacks.begin_frame(
-            display,
-            &frame,
-            display->callback_user_data
-        );
+        result = display->callbacks
+                     .begin_frame(display, &frame, display->callback_user_data);
         frame_started = result == ESP_OK;
     }
-    if (
-        result == ESP_OK &&
-        (
-            frame.front_target_id >= POCKETJS_NATIVE_TARGET_COUNT ||
-            frame.back_target_id >= POCKETJS_NATIVE_TARGET_COUNT ||
-            !is_power_of_two(frame.x_alignment) ||
-            !is_power_of_two(frame.y_alignment)
-        )
-    ) {
+    if (result == ESP_OK &&
+        (frame.front_target_id >= POCKETJS_NATIVE_TARGET_COUNT ||
+         frame.back_target_id >= POCKETJS_NATIVE_TARGET_COUNT ||
+         !is_power_of_two(frame.x_alignment) ||
+         !is_power_of_two(frame.y_alignment))) {
         result = ESP_ERR_INVALID_ARG;
     }
 
@@ -861,30 +776,17 @@ esp_err_t pocketjs_display_render_internal(
               );
     }
 
-    if (
-        result == ESP_OK &&
-        present &&
-        display->callbacks.end_frame != NULL
-    ) {
-        result = display->callbacks.end_frame(
-            display,
-            &frame,
-            display->callback_user_data
-        );
+    if (result == ESP_OK && present && display->callbacks.end_frame != NULL) {
+        result = display->callbacks
+                     .end_frame(display, &frame, display->callback_user_data);
         if (result != ESP_OK) {
             pocketjs_core_abort_rgb565_frame(core, frame.back_target_id);
         }
     }
-    if (
-        frame_started &&
-        (!present || result != ESP_OK) &&
-        display->callbacks.abort_frame != NULL
-    ) {
-        display->callbacks.abort_frame(
-            display,
-            &frame,
-            display->callback_user_data
-        );
+    if (frame_started && (!present || result != ESP_OK) &&
+        display->callbacks.abort_frame != NULL) {
+        display->callbacks
+            .abort_frame(display, &frame, display->callback_user_data);
     }
 
     display->busy = false;
@@ -896,12 +798,8 @@ esp_err_t pocketjs_display_delete(pocketjs_display_t *display)
     if (display == NULL) {
         return ESP_ERR_INVALID_ARG;
     }
-    if (
-        !display_is_owner(display) ||
-        display->attached ||
-        display->busy ||
-        display->flush_inflight
-    ) {
+    if (!display_is_owner(display) || display->attached || display->busy ||
+        display->flush_inflight) {
         return ESP_ERR_INVALID_STATE;
     }
     vSemaphoreDelete(display->completion);

@@ -62,28 +62,18 @@ esp_err_t pocketjs_create(
     pocketjs_t **out_runtime
 )
 {
-    if (
-        app == NULL ||
-        config == NULL ||
-        out_runtime == NULL ||
+    if (app == NULL || config == NULL || out_runtime == NULL ||
         app->target_id == NULL ||
         strcmp(app->target_id, POCKETJS_TARGET_ID) != 0 ||
-        app->host_abi != POCKETJS_HOST_ABI ||
-        app->logical_width == 0 ||
-        app->logical_height == 0 ||
-        app->raster_density == 0 ||
-        app->pixel_format != POCKETJS_PIXEL_FORMAT_RGB565
-    ) {
+        app->host_abi != POCKETJS_HOST_ABI || app->logical_width == 0 ||
+        app->logical_height == 0 || app->raster_density == 0 ||
+        app->pixel_format != POCKETJS_PIXEL_FORMAT_RGB565) {
         return ESP_ERR_INVALID_ARG;
     }
     *out_runtime = NULL;
 
     bool expected = false;
-    if (!atomic_compare_exchange_strong(
-            &s_runtime_claimed,
-            &expected,
-            true
-        )) {
+    if (!atomic_compare_exchange_strong(&s_runtime_claimed, &expected, true)) {
         return ESP_ERR_INVALID_STATE;
     }
 
@@ -160,17 +150,12 @@ esp_err_t pocketjs_attach_display(
     if (runtime == NULL || display == NULL) {
         return ESP_ERR_INVALID_ARG;
     }
-    if (
-        !runtime_is_owner(runtime) ||
-        runtime->busy ||
-        runtime->display != NULL
-    ) {
+    if (!runtime_is_owner(runtime) || runtime->busy ||
+        runtime->display != NULL) {
         return ESP_ERR_INVALID_STATE;
     }
-    if (
-        pocketjs_display_get_width(display) != runtime->app.logical_width ||
-        pocketjs_display_get_height(display) != runtime->app.logical_height
-    ) {
+    if (pocketjs_display_get_width(display) != runtime->app.logical_width ||
+        pocketjs_display_get_height(display) != runtime->app.logical_height) {
         return ESP_ERR_INVALID_SIZE;
     }
 
@@ -186,11 +171,8 @@ esp_err_t pocketjs_detach_display(pocketjs_t *runtime)
     if (runtime == NULL) {
         return ESP_ERR_INVALID_ARG;
     }
-    if (
-        !runtime_is_owner(runtime) ||
-        runtime->busy ||
-        runtime->display == NULL
-    ) {
+    if (!runtime_is_owner(runtime) || runtime->busy ||
+        runtime->display == NULL) {
         return ESP_ERR_INVALID_STATE;
     }
     pocketjs_display_detach_internal(runtime->display);
@@ -212,14 +194,12 @@ esp_err_t pocketjs_run_frame(
     }
 
     runtime->busy = true;
-    pocketjs_frame_stats_t stats = {0};
+    pocketjs_frame_stats_t stats = { 0 };
     const int64_t total_started = esp_timer_get_time();
 
     const int64_t javascript_started = esp_timer_get_time();
-    esp_err_t result = pocketjs_js_runtime_run_frame(
-        runtime->javascript,
-        input
-    );
+    esp_err_t result =
+        pocketjs_js_runtime_run_frame(runtime->javascript, input);
     stats.javascript_us = elapsed_us(javascript_started);
     if (result != ESP_OK) {
         goto finish;
@@ -230,7 +210,7 @@ esp_err_t pocketjs_run_frame(
     stats.core_tick_us = elapsed_us(tick_started);
 
     const int64_t render_started = esp_timer_get_time();
-    pocketjs_render_stats_t render_stats = {0};
+    pocketjs_render_stats_t render_stats = { 0 };
     if (runtime->display != NULL) {
         result = pocketjs_display_render_internal(
             runtime->display,
@@ -239,7 +219,7 @@ esp_err_t pocketjs_run_frame(
             &stats.flush_wait_us
         );
     } else {
-        pocketjs_damage_plan_t plan = {0};
+        pocketjs_damage_plan_t plan = { 0 };
         if (!pocketjs_core_prepare_rgb565_frame(
                 runtime->core,
                 POCKETJS_HEADLESS_TARGET_ID,
@@ -279,10 +259,7 @@ void pocketjs_destroy(pocketjs_t *runtime)
         return;
     }
     if (!runtime_is_owner(runtime) || runtime->busy) {
-        ESP_LOGE(
-            TAG,
-            "destroy rejected outside the idle owner-task context"
-        );
+        ESP_LOGE(TAG, "destroy rejected outside the idle owner-task context");
         return;
     }
     runtime->busy = true;

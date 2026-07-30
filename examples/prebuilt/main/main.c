@@ -7,13 +7,9 @@ void app_main(void)
 {
     const pocketjs_config_t config = POCKETJS_DEFAULT_CONFIG();
     pocketjs_t *runtime = NULL;
-    ESP_ERROR_CHECK(pocketjs_create(
-        &pocketjs_app_hello,
-        &config,
-        &runtime
-    ));
+    ESP_ERROR_CHECK(pocketjs_create(&pocketjs_app_hello, &config, &runtime));
 
-    pocketjs_frame_stats_t stats = {0};
+    pocketjs_frame_stats_t stats = { 0 };
     ESP_ERROR_CHECK(pocketjs_run_frame(runtime, NULL, &stats));
     ESP_LOGI(
         "pocketjs_example",

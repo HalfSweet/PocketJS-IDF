@@ -1,0 +1,22 @@
+---
+Language: Cpp
+BasedOnStyle: LLVM
+IndentWidth: 4
+ContinuationIndentWidth: 4
+TabWidth: 4
+UseTab: Never
+ColumnLimit: 80
+AlignAfterOpenBracket: BlockIndent
+AlignOperands: DontAlign
+AllowAllArgumentsOnNextLine: false
+AllowAllParametersOfDeclarationOnNextLine: false
+AllowShortBlocksOnASingleLine: Never
+AllowShortFunctionsOnASingleLine: None
+AllowShortIfStatementsOnASingleLine: Never
+BinPackArguments: false
+BinPackParameters: OnePerLine
+BreakBeforeBinaryOperators: None
+BreakBeforeBraces: WebKit
+Cpp11BracedListStyle: false
+PenaltyReturnTypeOnItsOwnLine: 1000
+SortIncludes: Never
