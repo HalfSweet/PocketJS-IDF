@@ -2,7 +2,7 @@
 set -euo pipefail
 
 mode="${1:-}"
-package_version="${2:-0.1.1}"
+package_version="${2:-0.0.0}"
 case "$mode" in
   prebuilt|source|archive) ;;
   *)
@@ -48,7 +48,7 @@ case "$mode" in
   archive)
     python -m pip install \
       --disable-pip-version-check \
-      "idf-component-manager==3.0.3"
+      "idf-component-manager==3.1.0"
     archive_dir="$(mktemp -d)"
     trap 'rm -rf "$archive_dir"' EXIT
     compote -W component pack \
@@ -56,32 +56,18 @@ case "$mode" in
       --name pocketjs-idf \
       --version "$package_version" \
       --dest-dir "$archive_dir"
-    archive="$archive_dir/pocketjs-idf_${package_version}.tgz"
-    tar -tzf "$archive" >"$archive_dir/archive.list"
-    grep -qx \
-      './vendor/pocketjs/contracts/spec/pocket-package.ts' \
-      "$archive_dir/archive.list"
-    grep -qx \
-      './vendor/pocketjs/framework/src/index.ts' \
-      "$archive_dir/archive.list"
-    grep -qx \
-      './vendor/pocketjs/engine/core/src/damage.rs' \
-      "$archive_dir/archive.list"
-    grep -qx \
-      './vendor/pocketjs/engine/backends/esp32p4-ppa/src/lib.rs' \
-      "$archive_dir/archive.list"
-    if grep -E \
-      '^\./rust/(pocketjs-core|pocketjs-esp32p4-ppa)/' \
-      "$archive_dir/archive.list"; then
-      echo "component archive contains a duplicate Rust crate" >&2
+    mapfile -t archives < <(
+      find "$archive_dir" -maxdepth 1 -type f \
+        -name 'pocketjs-idf_*.tgz' -print
+    )
+    if [[ "${#archives[@]}" -ne 1 ]]; then
+      echo "expected exactly one component archive, found ${#archives[@]}" >&2
       exit 1
     fi
-    if grep -E \
-      '^\./(\.git($|/)|\.gitmodules$|\.github/|\.ci/|AGENTS\.md$|.*/\.git($|/)|.*node_modules/|.*target/)' \
-      "$archive_dir/archive.list"; then
-      echo "component archive contains a forbidden local artifact" >&2
-      exit 1
-    fi
+    archive="${archives[0]}"
+    python3 \
+      "$component_dir/tools/audit_component_archive.py" \
+      "$archive"
     mkdir -p "$archive_dir/extracted/pocketjs-idf"
     tar -xzf "$archive" -C "$archive_dir/extracted/pocketjs-idf"
     project_dir="$archive_dir/extracted/pocketjs-idf/examples/prebuilt"

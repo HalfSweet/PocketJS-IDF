@@ -19,12 +19,16 @@ dependencies:
 files:
   use_gitignore: true
   exclude:
+    - ".clang-format"
     - ".gitmodules"
     - ".git/**/*"
     - "**/.git"
     - "**/.git/**/*"
     - "**/.github/**/*"
     - ".ci/**/*"
+    - "cliff.toml"
+    - "tests/test_component_archive.py"
+    - "tools/audit_component_archive.py"
     - "**/AGENTS.md"
     - "**/build*/**/*"
     - "**/managed_components/**/*"
