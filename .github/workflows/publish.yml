@@ -130,6 +130,7 @@ jobs:
       - name: Create or update the draft release
         shell: bash
         env:
+          GH_REPO: ${{ github.repository }}
           GH_TOKEN: ${{ github.token }}
           IS_PRERELEASE: ${{ needs.verify-tag.outputs.prerelease }}
           RELEASE_TAG: ${{ needs.verify-tag.outputs.tag }}
@@ -197,6 +198,7 @@ jobs:
       - name: Publish the prepared release
         shell: bash
         env:
+          GH_REPO: ${{ github.repository }}
           GH_TOKEN: ${{ github.token }}
           IS_PRERELEASE: ${{ needs.verify-tag.outputs.prerelease }}
           RELEASE_TAG: ${{ needs.verify-tag.outputs.tag }}
