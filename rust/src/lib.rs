@@ -1,4 +1,7 @@
 #![no_std]
+// Every public unsafe Rust item below is an exported C ABI entry point whose
+// pointer contract is documented in private_include/pocketjs_core.h.
+#![allow(clippy::missing_safety_doc)]
 extern crate alloc;
 #[cfg(test)]
 extern crate std;
@@ -77,6 +80,8 @@ extern "C" {
 // Unit tests exercise the transactional strip FFI without ESP-IDF. Rejecting
 // the hardware operations makes the renderer take its ordered software paths.
 #[cfg(test)]
+// The test stub must keep the argument-for-argument ESP-IDF C bridge ABI.
+#[allow(clippy::too_many_arguments)]
 unsafe fn pocketjs_ppa_fill_rgb565_bridge(
     _destination: *mut u16,
     _destination_pixels: usize,
@@ -92,6 +97,8 @@ unsafe fn pocketjs_ppa_fill_rgb565_bridge(
 }
 
 #[cfg(test)]
+// The test stub must keep the argument-for-argument ESP-IDF C bridge ABI.
+#[allow(clippy::too_many_arguments)]
 unsafe fn pocketjs_ppa_blend_a8_rgb565_bridge(
     _destination: *mut u16,
     _destination_pixels: usize,
@@ -112,6 +119,8 @@ unsafe fn pocketjs_ppa_blend_a8_rgb565_bridge(
 }
 
 #[cfg(test)]
+// The test stub must keep the argument-for-argument ESP-IDF C bridge ABI.
+#[allow(clippy::too_many_arguments)]
 unsafe fn pocketjs_ppa_srm_psm5650_rgb565_bridge(
     _destination: *mut u16,
     _destination_pixels: usize,

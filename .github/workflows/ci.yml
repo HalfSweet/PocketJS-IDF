@@ -5,18 +5,135 @@ on:
   push:
     branches:
       - main
+  workflow_call:
+    inputs:
+      checkout_ref:
+        description: Git ref whose source tree should be checked
+        required: false
+        type: string
+        default: ""
+      package_version:
+        description: Version used when packing the component
+        required: false
+        type: string
+        default: "0.0.0"
 
 permissions:
   contents: read
 
 concurrency:
-  group: ci-${{ github.workflow }}-${{ github.ref }}
+  group: >-
+    ci-${{ github.workflow }}-${{ inputs.checkout_ref || github.ref }}
   cancel-in-progress: true
 
 env:
   CARGO_TERM_COLOR: always
 
 jobs:
+  lint:
+    name: Lint and format
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out the component
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          ref: ${{ inputs.checkout_ref || github.ref }}
+          submodules: recursive
+
+      - name: Verify the checked-out PocketJS gitlink
+        shell: bash
+        run: |
+          expected="$(git rev-parse HEAD:vendor/pocketjs)"
+          actual="$(git -C vendor/pocketjs rev-parse HEAD)"
+          test "$actual" = "$expected"
+
+      - name: Cache Rust dependencies
+        uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
+        with:
+          path: |
+            ~/.cargo/git
+            ~/.cargo/registry
+            rust/target
+          key: lint-${{ runner.os }}-${{ hashFiles('rust/Cargo.lock') }}
+
+      - name: Install pinned Rust toolchain
+        run: |
+          rustup toolchain install 1.89.0 \
+            --profile minimal \
+            --component clippy,rustfmt
+          rustup default 1.89.0
+          rustup target add \
+            --toolchain 1.89.0 \
+            riscv32imafc-unknown-none-elf
+
+      - name: Install C formatter and Component Manager
+        run: |
+          python -m pip install \
+            --disable-pip-version-check \
+            clang-format==21.1.5 \
+            idf-component-manager==3.1.0
+
+      - name: Check C formatting
+        shell: bash
+        run: |
+          mapfile -d '' c_files < <(
+            git ls-files -z -- src include private_include examples |
+              while IFS= read -r -d '' file; do
+                case "$file" in
+                  *.c|*.h) printf '%s\0' "$file" ;;
+                esac
+              done
+          )
+          test "${#c_files[@]}" -gt 0
+          clang-format --dry-run --Werror "${c_files[@]}"
+
+      - name: Check Rust formatting
+        run: >-
+          cargo fmt
+          --manifest-path rust/Cargo.toml
+          --package pocketjs-esp32-core
+          -- --check
+
+      - name: Clippy host tests
+        run: >-
+          cargo clippy
+          --manifest-path rust/Cargo.toml
+          --workspace
+          --tests
+          --locked
+          -- -D warnings
+
+      - name: Clippy RISC-V release target
+        run: >-
+          cargo clippy
+          --manifest-path rust/Cargo.toml
+          --target riscv32imafc-unknown-none-elf
+          --release
+          --lib
+          --locked
+          -- -D warnings
+
+      - name: Lint component manifests
+        run: >-
+          compote manifest lint
+          idf_component.yml
+          examples/prebuilt/main/idf_component.yml
+          examples/source/main/idf_component.yml
+
+      - name: Lint shell scripts
+        uses: ludeeus/action-shellcheck@00cae500b08a931fb5698e11e79bfbd38e612a38 # 2.0.0
+        with:
+          check_together: "yes"
+          scandir: "./tools"
+          version: v0.11.0
+
+      - name: Lint GitHub Actions workflows
+        uses: raven-actions/actionlint@3d39aea434753780c3b3d4a1a31c854b4dbf49d7 # v2.2.0
+        with:
+          pyflakes: "false"
+          shellcheck: "false"
+          version: 1.7.12
+
   quality:
     name: Rust, packages, and component archive
     runs-on: ubuntu-latest
@@ -24,12 +141,15 @@ jobs:
       - name: Check out the component
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
+          ref: ${{ inputs.checkout_ref || github.ref }}
           submodules: recursive
 
-      - name: Verify the pinned PocketJS submodule
-        run: >-
-          test "$(git -C vendor/pocketjs rev-parse HEAD)"
-          = a4e154789655cafa9dc0f57a8c83fc2114d74776
+      - name: Verify the checked-out PocketJS gitlink
+        shell: bash
+        run: |
+          expected="$(git rev-parse HEAD:vendor/pocketjs)"
+          actual="$(git -C vendor/pocketjs rev-parse HEAD)"
+          test "$actual" = "$expected"
 
       - name: Cache Rust and Bun dependencies
         uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
@@ -46,7 +166,6 @@ jobs:
         run: |
           rustup toolchain install 1.89.0 --profile minimal
           rustup default 1.89.0
-          rustup component add rustfmt
 
       - name: Install pinned Bun toolchain
         uses: oven-sh/setup-bun@0c5077e51419868618aeaa5fe8019c62421857d6 # v2
@@ -55,13 +174,6 @@ jobs:
 
       - name: Install PocketJS compiler dependencies
         run: bun install --cwd vendor/pocketjs --frozen-lockfile
-
-      - name: Check maintained Rust formatting
-        run: >-
-          cargo fmt
-          --manifest-path rust/Cargo.toml
-          --package pocketjs-esp32-core
-          -- --check
 
       - name: Test the Rust integration and upstream crates
         run: |
@@ -82,7 +194,7 @@ jobs:
             --features esp-idf \
             --locked
 
-      - name: Test the Pocket encoder and embed validator
+      - name: Test the Pocket encoder and archive audit
         run: |
           bun test tests/pocket_package.test.ts
           python -m unittest discover -s tests -p 'test_*.py'
@@ -94,42 +206,30 @@ jobs:
         run: >-
           python -m pip install
           --disable-pip-version-check
-          idf-component-manager==3.0.3
+          idf-component-manager==3.1.0
 
-      - name: Lint, pack, and audit the component
+      - name: Pack and audit the component
+        shell: bash
+        env:
+          PACKAGE_VERSION: ${{ inputs.package_version || '0.0.0' }}
         run: |
           pack_dir="$RUNNER_TEMP/pocketjs-component-pack"
           mkdir -p "$pack_dir"
           compote -W component pack \
             --name pocketjs-idf \
-            --version 0.1.1 \
+            --version "$PACKAGE_VERSION" \
             --dest-dir "$pack_dir"
-          tar -tzf "$pack_dir/pocketjs-idf_0.1.1.tgz" \
-            >"$pack_dir/archive.list"
-          grep -qx \
-            './vendor/pocketjs/contracts/spec/pocket-package.ts' \
-            "$pack_dir/archive.list"
-          grep -qx \
-            './vendor/pocketjs/framework/src/index.ts' \
-            "$pack_dir/archive.list"
-          grep -qx \
-            './vendor/pocketjs/engine/core/src/damage.rs' \
-            "$pack_dir/archive.list"
-          grep -qx \
-            './vendor/pocketjs/engine/backends/esp32p4-ppa/src/lib.rs' \
-            "$pack_dir/archive.list"
-          if grep -E \
-            '^\./rust/(pocketjs-core|pocketjs-esp32p4-ppa)/' \
-            "$pack_dir/archive.list"; then
-            echo "component archive contains a duplicate Rust crate" >&2
+          mapfile -t archives < <(
+            find "$pack_dir" -maxdepth 1 -type f \
+              -name 'pocketjs-idf_*.tgz' -print
+          )
+          if [[ "${#archives[@]}" -ne 1 ]]; then
+            echo \
+              "expected exactly one component archive, found ${#archives[@]}" \
+              >&2
             exit 1
           fi
-          if grep -E \
-            '^\./(\.git($|/)|\.gitmodules$|\.github/|\.ci/|AGENTS\.md$|.*/\.git($|/)|.*node_modules/|.*target/)' \
-            "$pack_dir/archive.list"; then
-            echo "component archive contains a forbidden local artifact" >&2
-            exit 1
-          fi
+          python tools/audit_component_archive.py "${archives[0]}"
 
   idf:
     name: ESP-IDF ${{ matrix.idf }} / ${{ matrix.mode }}
@@ -155,6 +255,7 @@ jobs:
           # "PocketJS-IDF", which does not match halfsweet/pocketjs-idf on
           # case-sensitive Linux runners.
           path: pocketjs-idf
+          ref: ${{ inputs.checkout_ref || github.ref }}
           submodules: recursive
 
       - name: Cache CI toolchains
@@ -177,4 +278,6 @@ jobs:
             -e CCACHE_DIR=/app/${{ github.repository }}/pocketjs-idf/.ci/ccache
           command: >-
             cd pocketjs-idf &&
-            bash tools/ci_idf_build.sh ${{ matrix.mode }}
+            bash tools/ci_idf_build.sh
+            ${{ matrix.mode }}
+            ${{ inputs.package_version || '0.0.0' }}
